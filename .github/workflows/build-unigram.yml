@@ -16,6 +16,7 @@ env:
   WEBRTC_BRANCH: branch-heads/6312
   WEBRTC_REF: m123
   VLC_VERSION: 3.0.22-rc1
+  VLC_SOURCE_REF: 3.0.22-rc1
 
 jobs:
   build-vlc:
@@ -26,23 +27,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Checkout LibVLC submodule
+      - name: Checkout LibVLC source
         shell: bash
         run: |
-          git submodule update --init --depth 1 Libraries/vlc/vlc
-
-      - name: Compute LibVLC cache key
-        id: vlc-revision
-        shell: bash
-        run: |
-          echo "sha=$(git -C Libraries/vlc/vlc rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          rm -rf Libraries/vlc/vlc
+          git clone --branch "$VLC_SOURCE_REF" --depth 1 https://github.com/videolan/vlc.git Libraries/vlc/vlc
 
       - name: Restore LibVLC cache
         id: vlc-cache
         uses: actions/cache/restore@v4
         with:
           path: .ci-cache/vlc-x64.tar.gz
-          key: vlc-${{ runner.os }}-${{ steps.vlc-revision.outputs.sha }}-${{ hashFiles('Libraries/vlc/*.patch', 'Libraries/vlc/*.ps1', 'Libraries/vlc/*.nuspec', 'Libraries/vlc/*.props', 'Libraries/vlc/*.targets', 'Libraries/vlc/revision.txt', 'scripts/ci/build-vlc.sh') }}
+          key: vlc-${{ runner.os }}-${{ env.VLC_SOURCE_REF }}-${{ hashFiles('Libraries/vlc/*.patch', 'Libraries/vlc/*.ps1', 'Libraries/vlc/*.nuspec', 'Libraries/vlc/*.props', 'Libraries/vlc/*.targets', 'Libraries/vlc/revision.txt', 'scripts/ci/build-vlc.sh') }}
 
       - name: Build LibVLC
         if: steps.vlc-cache.outputs.cache-hit != 'true'
@@ -73,8 +69,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
+
+      - name: Checkout required submodules
+        shell: pwsh
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive `
+            Libraries/CoreWindowCustomDPI `
+            Libraries/flatbuffers `
+            Libraries/libprisma `
+            Libraries/libutf `
+            Libraries/libwebp `
+            Libraries/tdlib `
+            Libraries/tgcalls
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
