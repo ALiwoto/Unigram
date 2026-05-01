@@ -29,7 +29,20 @@ docker run --rm \
   -e HOME=/tmp \
   -v "$submodule_root:/vlc:rw" \
   "$docker_image" \
-  bash -lc 'set -euo pipefail; cd /vlc; extras/package/win32/build.sh -a x86_64 -z -r -u -w -D=/vlc'
+  bash -lc '
+    set -euo pipefail
+    mkdir -p /tmp/toolchain-shims
+    for tool in gcc g++ cpp ld ar ranlib strip nm as dlltool objdump windres widl; do
+      base="x86_64-w64-mingw32-$tool"
+      uwp="x86_64-w64-mingw32uwp-$tool"
+      if command -v "$base" >/dev/null 2>&1 && ! command -v "$uwp" >/dev/null 2>&1; then
+        ln -sf "$(command -v "$base")" "/tmp/toolchain-shims/$uwp"
+      fi
+    done
+    export PATH="/tmp/toolchain-shims:$PATH"
+    cd /vlc
+    extras/package/win32/build.sh -a x86_64 -z -r -u -w -D=/vlc
+  '
 
 test -d "$submodule_root/win64-uwp/vlc-3.0.22-rc1"
 
