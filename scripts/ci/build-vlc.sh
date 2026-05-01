@@ -31,25 +31,67 @@ docker run --rm \
   "$docker_image" \
   bash -lc '
     set -euo pipefail
-    shim_dir=/vlc/.toolchain-shims
-    mkdir -p "$shim_dir"
-    for tool in gcc g++ cpp ld ar ranlib strip nm as dlltool objdump windres widl; do
-      base="x86_64-w64-mingw32-$tool"
-      uwp="x86_64-w64-mingw32uwp-$tool"
-      if ! command -v "$uwp" >/dev/null 2>&1; then
-        base_path="$(command -v "$base" || true)"
-        if [ -n "$base_path" ]; then
-          cat > "$shim_dir/$uwp" <<EOF
+
+    dump_diagnostics() {
+      status=$?
+      if [ "$status" -ne 0 ]; then
+        echo "::group::VLC toolchain diagnostics"
+        echo "PATH=$PATH"
+        for tool in gcc g++ cpp ld ar ranlib strip nm as dlltool objdump windres widl; do
+          uwp="x86_64-w64-mingw32uwp-$tool"
+          printf "%s -> " "$uwp"
+          command -v "$uwp" || true
+        done
+        echo "::endgroup::"
+
+        if [ -d /vlc/contrib ]; then
+          while IFS= read -r log; do
+            echo "::group::$log"
+            tail -n 200 "$log" || true
+            echo "::endgroup::"
+          done < <(find /vlc/contrib -name config.log -type f 2>/dev/null | sort | tail -n 10)
+        fi
+      fi
+      exit "$status"
+    }
+    trap dump_diagnostics EXIT
+
+    shim_dir=/tmp/toolchain-shims
+    contrib_shim_dir=/vlc/contrib/x86_64-w64-mingw32uwp/bin
+    mkdir -p "$shim_dir" "$contrib_shim_dir"
+
+    create_uwp_shim() {
+      uwp="$1"
+      base="$2"
+      base_path="$(command -v "$base" || true)"
+      if [ -z "$base_path" ]; then
+        echo "Skipping $uwp shim because $base was not found"
+        return
+      fi
+
+      for target_dir in "$shim_dir" "$contrib_shim_dir"; do
+        cat > "$target_dir/$uwp" <<EOF
 #!/bin/sh
 exec "$base_path" "\$@"
 EOF
-          chmod +x "$shim_dir/$uwp"
-        fi
-      fi
+        chmod +x "$target_dir/$uwp"
+      done
+    }
+
+    for tool in gcc g++ cpp ld ar ranlib strip nm as dlltool objdump windres widl objcopy readelf addr2line strings size; do
+      create_uwp_shim "x86_64-w64-mingw32uwp-$tool" "x86_64-w64-mingw32-$tool"
     done
-    export PATH="$shim_dir:$PATH"
+
+    create_uwp_shim x86_64-w64-mingw32uwp-cc x86_64-w64-mingw32-gcc
+    create_uwp_shim x86_64-w64-mingw32uwp-c++ x86_64-w64-mingw32-g++
+
+    export PATH="$shim_dir:$contrib_shim_dir:$PATH"
+    command -v x86_64-w64-mingw32uwp-gcc
+    x86_64-w64-mingw32uwp-gcc --version | sed -n "1p"
+    printf "" | x86_64-w64-mingw32uwp-gcc -x c -E - >/dev/null
+
     cd /vlc
-    extras/package/win32/build.sh -a x86_64 -z -r -u -w -D=/vlc
+    extras/package/win32/build.sh -a x86_64 -z -r -u -w -D /vlc
   '
 
 test -d "$submodule_root/win64-uwp/vlc-3.0.22-rc1"
