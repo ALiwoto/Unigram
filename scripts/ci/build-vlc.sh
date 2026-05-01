@@ -29,7 +29,7 @@ docker run --rm \
   -e HOME=/tmp \
   -v "$submodule_root:/vlc:rw" \
   "$docker_image" \
-  bash -lc '
+  bash -c '
     set -euo pipefail
 
     dump_diagnostics() {
@@ -37,11 +37,18 @@ docker run --rm \
       if [ "$status" -ne 0 ]; then
         echo "::group::VLC toolchain diagnostics"
         echo "PATH=$PATH"
+        for candidate in clang clang++ llvm-ar llvm-ranlib llvm-strip llvm-nm llvm-objdump llvm-rc llvm-dlltool; do
+          printf "%s -> " "$candidate"
+          command -v "$candidate" || true
+        done
         for tool in gcc g++ cpp ld ar ranlib strip nm as dlltool objdump windres widl; do
           uwp="x86_64-w64-mingw32uwp-$tool"
           printf "%s -> " "$uwp"
           command -v "$uwp" || true
         done
+        find /opt /usr/local /usr -maxdepth 4 -type f \
+          \( -name "x86_64*w64*mingw*" -o -name "i686*w64*mingw*" -o -name "clang*" -o -name "llvm-*" \) \
+          2>/dev/null | sort | head -n 200 || true
         echo "::endgroup::"
 
         if [ -d /vlc/contrib ]; then
