@@ -31,15 +31,23 @@ docker run --rm \
   "$docker_image" \
   bash -lc '
     set -euo pipefail
-    mkdir -p /tmp/toolchain-shims
+    shim_dir=/vlc/.toolchain-shims
+    mkdir -p "$shim_dir"
     for tool in gcc g++ cpp ld ar ranlib strip nm as dlltool objdump windres widl; do
       base="x86_64-w64-mingw32-$tool"
       uwp="x86_64-w64-mingw32uwp-$tool"
-      if command -v "$base" >/dev/null 2>&1 && ! command -v "$uwp" >/dev/null 2>&1; then
-        ln -sf "$(command -v "$base")" "/tmp/toolchain-shims/$uwp"
+      if ! command -v "$uwp" >/dev/null 2>&1; then
+        base_path="$(command -v "$base" || true)"
+        if [ -n "$base_path" ]; then
+          cat > "$shim_dir/$uwp" <<EOF
+#!/bin/sh
+exec "$base_path" "\$@"
+EOF
+          chmod +x "$shim_dir/$uwp"
+        fi
       fi
     done
-    export PATH="/tmp/toolchain-shims:$PATH"
+    export PATH="$shim_dir:$PATH"
     cd /vlc
     extras/package/win32/build.sh -a x86_64 -z -r -u -w -D=/vlc
   '
