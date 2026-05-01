@@ -16,6 +16,11 @@ for patch in "${patches[@]}"; do
   git -C "$submodule_root" apply --3way --ignore-space-change --ignore-whitespace "$patch"
 done
 
+# VLC 3.0.x hardcodes a specific SourceForge mirror that is no longer reliable
+# on GitHub-hosted runners. Use the generic redirector instead.
+sed -i 's|^SF := https://netcologne\.dl\.sourceforge\.net/$|SF := https://downloads.sourceforge.net/project|' \
+  "$submodule_root/contrib/src/main.mak"
+
 mkdir -p "$submodule_root/src"
 cp "$vlc_root/revision.txt" "$submodule_root/src/revision.txt"
 
