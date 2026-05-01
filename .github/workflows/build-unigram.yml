@@ -1,0 +1,380 @@
+name: Build Unigram
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-unigram-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CONFIGURATION: Release
+  PLATFORM: x64
+  VCPKG_COMMIT: cff6ed45719c0162fa7065fdac90506a0add812c
+  WEBRTC_BRANCH: branch-heads/6312
+  WEBRTC_REF: m123
+  VLC_VERSION: 3.0.22-rc1
+
+jobs:
+  build-vlc:
+    name: Build LibVLC
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout LibVLC submodule
+        shell: bash
+        run: |
+          git submodule update --init --depth 1 Libraries/vlc/vlc
+
+      - name: Compute LibVLC cache key
+        id: vlc-revision
+        shell: bash
+        run: |
+          echo "sha=$(git -C Libraries/vlc/vlc rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore LibVLC cache
+        id: vlc-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .ci-cache/vlc-x64.tar.gz
+          key: vlc-${{ runner.os }}-${{ steps.vlc-revision.outputs.sha }}-${{ hashFiles('Libraries/vlc/*.patch', 'Libraries/vlc/*.ps1', 'Libraries/vlc/*.nuspec', 'Libraries/vlc/*.props', 'Libraries/vlc/*.targets', 'Libraries/vlc/revision.txt', 'scripts/ci/build-vlc.sh') }}
+
+      - name: Build LibVLC
+        if: steps.vlc-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          bash scripts/ci/build-vlc.sh .ci-cache/vlc-x64.tar.gz
+
+      - name: Save LibVLC cache
+        if: steps.vlc-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .ci-cache/vlc-x64.tar.gz
+          key: ${{ steps.vlc-cache.outputs.cache-primary-key }}
+
+      - name: Upload LibVLC artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vlc-x64
+          path: .ci-cache/vlc-x64.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+
+  build:
+    name: Build x64 package
+    runs-on: windows-2022
+    needs: build-vlc
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Download LibVLC artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: vlc-x64
+          path: .ci-cache
+
+      - name: Restore LibVLC build tree
+        shell: pwsh
+        run: |
+          tar -xf .ci-cache\vlc-x64.tar.gz -C .
+
+      - name: Pack LibVLC NuGet
+        shell: pwsh
+        run: |
+          $nuspec = Join-Path $PWD 'artifacts\vlc\VideoLAN.LibVLC.UWP.x64.nuspec'
+          New-Item -ItemType Directory -Path (Split-Path $nuspec -Parent) -Force | Out-Null
+          .\scripts\ci\new-vlc-x64-nuspec.ps1 -InputPath 'Libraries\vlc\VideoLAN.LibVLC.UWP.nuspec' -OutputPath $nuspec
+          nuget pack $nuspec -OutputDirectory Libraries -NoPackageAnalysis
+
+      - name: Detect Windows SDK
+        id: windows-sdk
+        shell: pwsh
+        run: |
+          $root = 'C:\Program Files (x86)\Windows Kits\10\Include'
+          $sdk = Get-ChildItem $root -Directory |
+            Where-Object { Test-Path (Join-Path $_.FullName 'um\Windows.h') } |
+            Sort-Object Name -Descending |
+            Select-Object -First 1 -ExpandProperty Name
+
+          if (-not $sdk) {
+            throw 'No Windows SDK installation was found on the runner.'
+          }
+
+          "version=$sdk" >> $env:GITHUB_OUTPUT
+          "WINDOWS_SDK_VERSION=$sdk" >> $env:GITHUB_ENV
+
+      - name: Generate Constants.Secret.cs
+        shell: pwsh
+        env:
+          UNIGRAM_API_ID: ${{ secrets.UNIGRAM_API_ID }}
+          UNIGRAM_API_HASH: ${{ secrets.UNIGRAM_API_HASH }}
+          UNIGRAM_APP_CHANNEL: ${{ secrets.UNIGRAM_APP_CHANNEL }}
+        run: |
+          .\scripts\ci\write-constants-secret.ps1
+
+      - name: Compute dependency revisions
+        id: revisions
+        shell: pwsh
+        run: |
+          "tdlib=$(git -C Libraries/tdlib rev-parse HEAD)" >> $env:GITHUB_OUTPUT
+          "tgcalls=$(git -C Libraries/tgcalls rev-parse HEAD)" >> $env:GITHUB_OUTPUT
+
+      - name: Restore vcpkg cache
+        id: vcpkg-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .ci\vcpkg\bincache
+            .ci\vcpkg\downloads
+            .ci\vcpkg\installed
+            .ci\vcpkg\packages
+          key: vcpkg-${{ runner.os }}-${{ env.VCPKG_COMMIT }}-${{ env.PLATFORM }}-${{ hashFiles('Libraries/vcpkg.patch', 'scripts/ci/patch-vcpkg-ffmpeg.ps1') }}
+
+      - name: Bootstrap vcpkg
+        shell: pwsh
+        run: |
+          $root = Join-Path $PWD '.ci\vcpkg'
+          if (-not (Test-Path (Join-Path $root '.git'))) {
+            git clone --filter=blob:none https://github.com/microsoft/vcpkg.git $root
+          }
+
+          git -C $root fetch --depth 1 origin $env:VCPKG_COMMIT
+          git -C $root checkout $env:VCPKG_COMMIT
+
+          $patchPath = (Resolve-Path 'Libraries\vcpkg.patch').Path
+          git -C $root apply --check $patchPath 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            git -C $root apply $patchPath
+          }
+
+          .\scripts\ci\patch-vcpkg-ffmpeg.ps1 -VcpkgRoot $root
+
+          if (-not (Test-Path (Join-Path $root 'vcpkg.exe'))) {
+            & (Join-Path $root 'bootstrap-vcpkg.bat')
+          }
+
+      - name: Install vcpkg dependencies
+        shell: pwsh
+        run: |
+          $root = (Resolve-Path '.ci\vcpkg').Path
+          $binCache = Join-Path $root 'bincache'
+          New-Item -ItemType Directory -Path $binCache -Force | Out-Null
+
+          $env:VCPKG_ROOT = $root
+          $env:VCPKG_BINARY_SOURCES = "clear;files,$binCache,readwrite"
+
+          & (Join-Path $root 'vcpkg.exe') install `
+            gperf:x86-windows `
+            ffmpeg[dav1d,opus,vpx]:x64-uwp `
+            lz4:x64-uwp `
+            openssl:x64-uwp `
+            zlib:x64-uwp `
+            libogg:x64-uwp `
+            opus:x64-uwp `
+            boost-regex:x64-uwp
+
+          & (Join-Path $root 'vcpkg.exe') integrate install
+
+      - name: Save vcpkg cache
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .ci\vcpkg\bincache
+            .ci\vcpkg\downloads
+            .ci\vcpkg\installed
+            .ci\vcpkg\packages
+          key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
+
+      - name: Restore TDLib cache
+        id: tdjson-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            Libraries\tdjson\td_api.tl
+            Libraries\tdjson\x64
+          key: tdjson-${{ runner.os }}-${{ env.VCPKG_COMMIT }}-${{ steps.revisions.outputs.tdlib }}-${{ hashFiles('Libraries/tdjson/build.ps1') }}
+
+      - name: Probe TDLib outputs
+        id: tdjson-probe
+        shell: pwsh
+        run: |
+          $ready = (
+            (Test-Path 'Libraries\tdjson\td_api.tl') -and
+            (Test-Path 'Libraries\tdjson\x64\tdjson.dll') -and
+            (Test-Path 'Libraries\tdjson\x64\zlib1.dll')
+          )
+          "ready=$($ready.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
+      - name: Build TDLib
+        if: steps.tdjson-cache.outputs.cache-hit != 'true' || steps.tdjson-probe.outputs.ready != 'true'
+        shell: pwsh
+        run: |
+          $vcpkgRoot = (Resolve-Path '.ci\vcpkg').Path
+          .\Libraries\tdjson\build.ps1 -vcpkg_root $vcpkgRoot -arch x64
+
+      - name: Save TDLib cache
+        if: steps.tdjson-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            Libraries\tdjson\td_api.tl
+            Libraries\tdjson\x64
+          key: ${{ steps.tdjson-cache.outputs.cache-primary-key }}
+
+      - name: Prepare WebRTC storage
+        shell: pwsh
+        run: |
+          git config --global core.longpaths true
+
+          $webrtcTarget = 'D:\webrtc-cache'
+          $depotToolsTarget = 'D:\depot_tools-cache'
+
+          New-Item -ItemType Directory -Path $webrtcTarget -Force | Out-Null
+          New-Item -ItemType Directory -Path $depotToolsTarget -Force | Out-Null
+
+          if (-not (Test-Path 'C:\webrtc')) {
+            New-Item -ItemType Junction -Path 'C:\webrtc' -Target $webrtcTarget | Out-Null
+          }
+
+          if (-not (Test-Path 'C:\depot_tools')) {
+            New-Item -ItemType Junction -Path 'C:\depot_tools' -Target $depotToolsTarget | Out-Null
+          }
+
+      - name: Prepare Visual Studio path for WebRTC
+        shell: pwsh
+        run: |
+          $communityPath = 'C:\Program Files\Microsoft Visual Studio\2022\Community'
+          if (Test-Path $communityPath) {
+            return
+          }
+
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          if (-not (Test-Path $vswhere)) {
+            throw 'Unable to find vswhere.exe.'
+          }
+
+          $installationPath = & $vswhere -latest -products * -property installationPath
+          if (-not $installationPath) {
+            throw 'Unable to locate a Visual Studio 2022 installation.'
+          }
+
+          New-Item -ItemType Junction -Path $communityPath -Target $installationPath | Out-Null
+
+      - name: Restore WebRTC cache
+        id: webrtc-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            D:\depot_tools-cache
+            D:\webrtc-cache
+          key: webrtc-${{ runner.os }}-${{ env.WEBRTC_BRANCH }}-${{ env.WEBRTC_REF }}-${{ steps.revisions.outputs.tgcalls }}-${{ hashFiles('Libraries/webrtc/**') }}
+
+      - name: Probe WebRTC outputs
+        id: webrtc-probe
+        shell: pwsh
+        run: |
+          $sourceReady = Test-Path 'C:\webrtc\src\DEPS'
+          $buildReady = Test-Path 'C:\webrtc\src\out\msvc\uwp\release\x64\obj\webrtc.lib'
+          "source_ready=$($sourceReady.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+          "build_ready=$($buildReady.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
+      - name: Acquire WebRTC source
+        if: steps.webrtc-cache.outputs.cache-hit != 'true' || steps.webrtc-probe.outputs.source_ready != 'true'
+        shell: cmd
+        run: Libraries\webrtc\acquire.cmd
+
+      - name: Build WebRTC
+        if: steps.webrtc-cache.outputs.cache-hit != 'true' || steps.webrtc-probe.outputs.build_ready != 'true'
+        shell: cmd
+        run: Libraries\webrtc\build.cmd x64 release
+
+      - name: Save WebRTC cache
+        if: steps.webrtc-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            D:\depot_tools-cache
+            D:\webrtc-cache
+          key: ${{ steps.webrtc-cache.outputs.cache-primary-key }}
+
+      - name: Restore NuGet caches
+        id: nuget-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            packages
+            ~\.nuget\packages
+            ~\AppData\Local\NuGet\v3-cache
+          key: nuget-${{ runner.os }}-${{ hashFiles('nuget.config', 'Telegram/Telegram.csproj', 'Telegram.Msix/Telegram.Msix.wapproj', 'Telegram.Native/Telegram.Native.vcxproj', 'Telegram.Native.Calls/Telegram.Native.Calls.vcxproj', 'Telegram.Native/packages.config', 'Telegram.Native.Calls/packages.config', 'Telegram.Generators/Telegram.Generators.csproj', 'Telegram.Stub/Telegram.Stub.csproj') }}
+
+      - name: Restore NuGet packages
+        shell: pwsh
+        run: |
+          nuget restore Telegram.Native\packages.config -PackagesDirectory packages -ConfigFile nuget.config -NonInteractive
+          nuget restore Telegram.Native.Calls\packages.config -PackagesDirectory packages -ConfigFile nuget.config -NonInteractive
+
+          msbuild Telegram.Msix\Telegram.Msix.wapproj `
+            /t:Restore `
+            /m `
+            /p:Configuration=${env:CONFIGURATION} `
+            /p:Platform=${env:PLATFORM} `
+            /p:RestorePackagesConfig=true `
+            /p:TargetPlatformVersion=${env:WINDOWS_SDK_VERSION} `
+            /p:WindowsTargetPlatformVersion=${env:WINDOWS_SDK_VERSION}
+
+      - name: Save NuGet caches
+        if: steps.nuget-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            packages
+            ~\.nuget\packages
+            ~\AppData\Local\NuGet\v3-cache
+          key: ${{ steps.nuget-cache.outputs.cache-primary-key }}
+
+      - name: Build package
+        shell: pwsh
+        run: |
+          $artifactRoot = Join-Path $PWD 'artifacts'
+          $appxDir = Join-Path $artifactRoot 'appx'
+          $logDir = Join-Path $artifactRoot 'logs'
+
+          New-Item -ItemType Directory -Path $appxDir -Force | Out-Null
+          New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+
+          msbuild Telegram.Msix\Telegram.Msix.wapproj `
+            /m `
+            /bl:$logDir\build.binlog `
+            /p:Configuration=${env:CONFIGURATION} `
+            /p:Platform=${env:PLATFORM} `
+            /p:UapAppxPackageBuildMode=SideloadOnly `
+            /p:AppxBundlePlatforms=${env:PLATFORM} `
+            /p:AppxBundle=Always `
+            /p:RestorePackagesConfig=true `
+            /p:TargetPlatformVersion=${env:WINDOWS_SDK_VERSION} `
+            /p:WindowsTargetPlatformVersion=${env:WINDOWS_SDK_VERSION} `
+            /p:AppxPackageDir="$appxDir\"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: unigram-x64
+          path: artifacts
+          if-no-files-found: error
+          retention-days: 14
