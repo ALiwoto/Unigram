@@ -20,7 +20,9 @@ mkdir -p "$submodule_root/src"
 cp "$vlc_root/revision.txt" "$submodule_root/src/revision.txt"
 
 docker run --rm \
-  -v "$submodule_root:/vlc" \
+  --user "$(id -u):$(id -g)" \
+  -e HOME=/tmp \
+  -v "$submodule_root:/vlc:rw" \
   "$docker_image" \
   bash -lc 'set -euo pipefail; cd /vlc; extras/package/win32/build.sh -a x86_64 -z -r -u -w -D=/vlc'
 
