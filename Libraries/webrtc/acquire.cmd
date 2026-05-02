@@ -10,7 +10,7 @@ if errorlevel 1 goto :error
 echo.
 echo Opening the zip file...
 c:
-mkdir c:\depot_tools
+if not exist c:\depot_tools\ mkdir c:\depot_tools
 if errorlevel 1 goto :error
 
 tar -xf depot_tools.zip -C /../depot_tools/
@@ -29,7 +29,7 @@ set GYP_MSVS_VERSION=2022
 echo.
 echo Creating the folder where the code base will be placed...
 c:
-mkdir c:\webrtc
+if not exist c:\webrtc\ mkdir c:\webrtc
 if errorlevel 1 goto :error
 
 cd c:\webrtc
