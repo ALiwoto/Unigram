@@ -233,7 +233,12 @@ jobs:
         shell: pwsh
         run: |
           $vcpkgRoot = (Resolve-Path '.ci\vcpkg').Path
-          .\Libraries\tdjson\build.ps1 -vcpkg_root $vcpkgRoot -arch x64
+          Push-Location Libraries\tdjson
+          try {
+            .\build.ps1 -vcpkg_root $vcpkgRoot -arch x64
+          } finally {
+            Pop-Location
+          }
 
       - name: Save TDLib cache
         if: steps.tdjson-cache.outputs.cache-hit != 'true'
