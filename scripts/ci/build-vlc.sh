@@ -21,6 +21,12 @@ done
 sed -i 's|^SF := https://netcologne\.dl\.sourceforge\.net/$|SF := https://downloads.sourceforge.net/project|' \
   "$submodule_root/contrib/src/main.mak"
 
+# The -r flag in VLC 3.0.x enables release mode and also asks build.sh to run
+# the full Windows installer packaging target. The NuGet package only needs the
+# staged LibVLC tree, so keep release mode but package the needed target below.
+sed -i 's|^\([[:space:]]*\)INSTALLER="r"$|\1:|' \
+  "$submodule_root/extras/package/win32/build.sh"
+
 mkdir -p "$submodule_root/src"
 cp "$vlc_root/revision.txt" "$submodule_root/src/revision.txt"
 
@@ -99,6 +105,7 @@ EOF
 
     cd /vlc
     extras/package/win32/build.sh -a x86_64 -z -r -u -w -D /vlc
+    make -C win64-uwp package-win-strip
   '
 
 test -d "$submodule_root/win64-uwp/vlc-3.0.22-rc1"
