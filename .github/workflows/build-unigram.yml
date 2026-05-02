@@ -396,6 +396,7 @@ jobs:
             /p:Configuration=${env:CONFIGURATION} `
             /p:Platform=${env:PLATFORM} `
             /p:RestorePackagesConfig=true `
+            /p:PlatformToolset=v143 `
             /p:TargetPlatformVersion=${env:WINDOWS_SDK_VERSION} `
             /p:WindowsTargetPlatformVersion=${env:WINDOWS_SDK_VERSION}
 
@@ -428,6 +429,7 @@ jobs:
             /p:AppxBundlePlatforms=${env:PLATFORM} `
             /p:AppxBundle=Always `
             /p:RestorePackagesConfig=true `
+            /p:PlatformToolset=v143 `
             /p:TargetPlatformVersion=${env:WINDOWS_SDK_VERSION} `
             /p:WindowsTargetPlatformVersion=${env:WINDOWS_SDK_VERSION} `
             /p:AppxPackageDir="$appxDir\"
