@@ -362,6 +362,7 @@ jobs:
           set "PATH=C:\depot_tools;C:\webrtc\src\buildtools\win;C:\webrtc\src\third_party\ninja;%PATH%"
           where gn
           where ninja
+          cd /d C:\webrtc\src
           call "%GITHUB_WORKSPACE%\Libraries\webrtc\build.cmd" x64 release
 
       - name: Save WebRTC cache
