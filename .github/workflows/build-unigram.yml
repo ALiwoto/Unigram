@@ -155,24 +155,56 @@ jobs:
       - name: Bootstrap vcpkg
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           $root = Join-Path $PWD '.ci\vcpkg'
+          $stash = Join-Path $PWD '.ci\vcpkg-restored-cache'
+          $cacheDirs = @('bincache', 'downloads', 'installed', 'packages')
+
+          if ((Test-Path $root) -and -not (Test-Path (Join-Path $root '.git'))) {
+            Remove-Item $stash -Recurse -Force -ErrorAction SilentlyContinue
+            New-Item -ItemType Directory -Path $stash -Force | Out-Null
+
+            foreach ($dir in $cacheDirs) {
+              $path = Join-Path $root $dir
+              if (Test-Path $path) {
+                Move-Item -Path $path -Destination $stash -Force
+              }
+            }
+
+            Remove-Item $root -Recurse -Force
+          }
+
           if (-not (Test-Path (Join-Path $root '.git'))) {
             git clone --filter=blob:none https://github.com/microsoft/vcpkg.git $root
+            if ($LASTEXITCODE -ne 0) { throw 'git clone vcpkg failed.' }
+          }
+
+          if (Test-Path $stash) {
+            foreach ($dir in $cacheDirs) {
+              $path = Join-Path $stash $dir
+              if (Test-Path $path) {
+                Move-Item -Path $path -Destination $root -Force
+              }
+            }
           }
 
           git -C $root fetch --depth 1 origin $env:VCPKG_COMMIT
+          if ($LASTEXITCODE -ne 0) { throw "git fetch vcpkg commit '$env:VCPKG_COMMIT' failed." }
           git -C $root checkout $env:VCPKG_COMMIT
+          if ($LASTEXITCODE -ne 0) { throw "git checkout vcpkg commit '$env:VCPKG_COMMIT' failed." }
 
           $patchPath = (Resolve-Path 'Libraries\vcpkg.patch').Path
           git -C $root apply --check $patchPath 2>$null
           if ($LASTEXITCODE -eq 0) {
             git -C $root apply $patchPath
+            if ($LASTEXITCODE -ne 0) { throw "Unable to apply vcpkg patch '$patchPath'." }
           }
 
           .\scripts\ci\patch-vcpkg-ffmpeg.ps1 -VcpkgRoot $root
 
           if (-not (Test-Path (Join-Path $root 'vcpkg.exe'))) {
             & (Join-Path $root 'bootstrap-vcpkg.bat')
+            if ($LASTEXITCODE -ne 0) { throw 'bootstrap-vcpkg.bat failed.' }
           }
 
       - name: Install vcpkg dependencies
