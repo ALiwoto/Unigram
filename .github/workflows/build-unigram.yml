@@ -265,6 +265,16 @@ jobs:
         shell: pwsh
         run: |
           $vcpkgRoot = (Resolve-Path '.ci\vcpkg').Path
+          $gperf = Join-Path $vcpkgRoot 'installed\x86-windows\tools\gperf\gperf.exe'
+          if (-not (Test-Path $gperf)) {
+            $gperf = Get-ChildItem (Join-Path $vcpkgRoot 'installed') -Recurse -Filter gperf.exe |
+              Select-Object -First 1 -ExpandProperty FullName
+          }
+          if (-not $gperf) {
+            throw 'Unable to find vcpkg-provided gperf.exe.'
+          }
+          $env:PATH = "$(Split-Path $gperf -Parent);$env:PATH"
+
           Push-Location Libraries\tdjson
           try {
             .\build.ps1 -vcpkg_root $vcpkgRoot -arch x64
