@@ -38,13 +38,13 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .ci-cache/vlc-x64.tar.gz
-          key: vlc-${{ runner.os }}-${{ env.VLC_SOURCE_REF }}-${{ hashFiles('Libraries/vlc/*.patch', 'Libraries/vlc/*.ps1', 'Libraries/vlc/*.nuspec', 'Libraries/vlc/*.props', 'Libraries/vlc/*.targets', 'Libraries/vlc/revision.txt', 'scripts/ci/build-vlc.sh') }}
+          key: vlc-${{ runner.os }}-${{ env.VLC_SOURCE_REF }}-${{ hashFiles('Libraries/vlc/*.patch', 'Libraries/vlc/*.ps1', 'Libraries/vlc/*.nuspec', 'Libraries/vlc/*.props', 'Libraries/vlc/*.targets', 'Libraries/vlc/revision.txt', '.github/scripts/build-vlc.sh') }}
 
       - name: Build LibVLC
         if: steps.vlc-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          bash scripts/ci/build-vlc.sh .ci-cache/vlc-x64.tar.gz
+          bash .github/scripts/build-vlc.sh .ci-cache/vlc-x64.tar.gz
 
       - name: Save LibVLC cache
         if: steps.vlc-cache.outputs.cache-hit != 'true'
@@ -105,7 +105,7 @@ jobs:
         run: |
           $nuspec = Join-Path $PWD 'artifacts\vlc\VideoLAN.LibVLC.UWP.x64.nuspec'
           New-Item -ItemType Directory -Path (Split-Path $nuspec -Parent) -Force | Out-Null
-          .\scripts\ci\new-vlc-x64-nuspec.ps1 -InputPath 'Libraries\vlc\VideoLAN.LibVLC.UWP.nuspec' -OutputPath $nuspec
+          .\.github\scripts\new-vlc-x64-nuspec.ps1 -InputPath 'Libraries\vlc\VideoLAN.LibVLC.UWP.nuspec' -OutputPath $nuspec
           nuget pack $nuspec -BasePath Libraries\vlc -OutputDirectory Libraries -NoPackageAnalysis
 
       - name: Detect Windows SDK
@@ -132,7 +132,7 @@ jobs:
           UNIGRAM_API_HASH: ${{ secrets.UNIGRAM_API_HASH }}
           UNIGRAM_APP_CHANNEL: ${{ secrets.UNIGRAM_APP_CHANNEL }}
         run: |
-          .\scripts\ci\write-constants-secret.ps1
+          .\.github\scripts\write-constants-secret.ps1
 
       - name: Compute dependency revisions
         id: revisions
@@ -150,7 +150,7 @@ jobs:
             .ci\vcpkg\downloads
             .ci\vcpkg\installed
             .ci\vcpkg\packages
-          key: vcpkg-${{ runner.os }}-${{ env.VCPKG_COMMIT }}-${{ env.PLATFORM }}-${{ hashFiles('Libraries/vcpkg.patch', 'scripts/ci/patch-vcpkg-ffmpeg.ps1') }}
+          key: vcpkg-${{ runner.os }}-${{ env.VCPKG_COMMIT }}-${{ env.PLATFORM }}-${{ hashFiles('Libraries/vcpkg.patch', '.github/scripts/patch-vcpkg-ffmpeg.ps1', '.github/scripts/vcpkg-packages.txt') }}
 
       - name: Bootstrap vcpkg
         shell: pwsh
@@ -200,7 +200,7 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "Unable to apply vcpkg patch '$patchPath'." }
           }
 
-          .\scripts\ci\patch-vcpkg-ffmpeg.ps1 -VcpkgRoot $root
+          .\.github\scripts\patch-vcpkg-ffmpeg.ps1 -VcpkgRoot $root
 
           if (-not (Test-Path (Join-Path $root 'vcpkg.exe'))) {
             & (Join-Path $root 'bootstrap-vcpkg.bat')
@@ -217,15 +217,15 @@ jobs:
           $env:VCPKG_ROOT = $root
           $env:VCPKG_BINARY_SOURCES = "clear;files,$binCache,readwrite"
 
-          & (Join-Path $root 'vcpkg.exe') install `
-            gperf:x86-windows `
-            ffmpeg[dav1d,opus,vpx]:x64-uwp `
-            lz4:x64-uwp `
-            openssl:x64-uwp `
-            zlib:x64-uwp `
-            libogg:x64-uwp `
-            opus:x64-uwp `
-            boost-regex:x64-uwp
+          $packages = Get-Content '.github\scripts\vcpkg-packages.txt' |
+            ForEach-Object { $_.Trim() } |
+            Where-Object { $_ -and -not $_.StartsWith('#') }
+          if (-not $packages) {
+            throw 'No vcpkg packages were listed in .github\scripts\vcpkg-packages.txt.'
+          }
+
+          & (Join-Path $root 'vcpkg.exe') install @packages
+          if ($LASTEXITCODE -ne 0) { throw 'vcpkg install failed.' }
 
           & (Join-Path $root 'vcpkg.exe') integrate install
 
@@ -399,7 +399,6 @@ jobs:
             /p:Platform=${env:PLATFORM} `
             /p:RestorePackagesConfig=true `
             /p:PlatformToolset=v143 `
-            /p:ForceImportBeforeCppTargets="$PWD\scripts\ci\webrtc-libyuv-include.props" `
             /p:TargetPlatformVersion=${env:WINDOWS_SDK_VERSION} `
             /p:WindowsTargetPlatformVersion=${env:WINDOWS_SDK_VERSION}
 
@@ -433,7 +432,6 @@ jobs:
             /p:AppxBundle=Always `
             /p:RestorePackagesConfig=true `
             /p:PlatformToolset=v143 `
-            /p:ForceImportBeforeCppTargets="$PWD\scripts\ci\webrtc-libyuv-include.props" `
             /p:TargetPlatformVersion=${env:WINDOWS_SDK_VERSION} `
             /p:WindowsTargetPlatformVersion=${env:WINDOWS_SDK_VERSION} `
             /p:AppxPackageDir="$appxDir\"

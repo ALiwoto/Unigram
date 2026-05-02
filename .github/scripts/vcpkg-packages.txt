@@ -1,0 +1,10 @@
+# Editing this file invalidates the vcpkg cache.
+gperf:x86-windows
+ffmpeg[dav1d,opus,vpx]:x64-uwp
+lz4:x64-uwp
+openssl:x64-uwp
+zlib:x64-uwp
+libogg:x64-uwp
+libyuv:x64-uwp
+opus:x64-uwp
+boost-regex:x64-uwp
