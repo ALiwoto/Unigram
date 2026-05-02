@@ -39,3 +39,11 @@ for %%a in (%~1) do (
         if errorlevel 1 goto :error
     )
 )
+
+goto :exit
+
+:error
+echo Last command failed with error code: %errorlevel%
+
+:exit
+exit /b %errorlevel%

@@ -358,7 +358,11 @@ jobs:
       - name: Build WebRTC
         if: steps.webrtc-cache.outputs.cache-hit != 'true' || steps.webrtc-probe.outputs.build_ready != 'true'
         shell: cmd
-        run: Libraries\webrtc\build.cmd x64 release
+        run: |
+          set "PATH=C:\depot_tools;C:\webrtc\src\buildtools\win;C:\webrtc\src\third_party\ninja;%PATH%"
+          where gn
+          where ninja
+          call "%GITHUB_WORKSPACE%\Libraries\webrtc\build.cmd" x64 release
 
       - name: Save WebRTC cache
         if: steps.webrtc-cache.outputs.cache-hit != 'true'

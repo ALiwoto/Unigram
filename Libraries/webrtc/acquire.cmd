@@ -87,7 +87,7 @@ call git apply --3way --ignore-whitespace "%PATCH_DIR%/third_party/libyuv/fix.pa
 goto :exit
 
 :error
-echo Last command failed with erro code: %errorlevel%
+echo Last command failed with error code: %errorlevel%
 
 :exit
 exit /b %errorlevel%
