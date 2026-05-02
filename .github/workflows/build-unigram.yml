@@ -17,6 +17,7 @@ env:
   WEBRTC_REF: m123
   VLC_VERSION: 3.0.22-rc1
   VLC_SOURCE_REF: 3.0.22-rc1
+  VCPKG_PLATFORM_TOOLSET: v145
 
 jobs:
   build-vlc:
@@ -150,7 +151,7 @@ jobs:
             .ci\vcpkg\downloads
             .ci\vcpkg\installed
             .ci\vcpkg\packages
-          key: vcpkg-${{ runner.os }}-${{ env.VCPKG_COMMIT }}-${{ env.PLATFORM }}-${{ hashFiles('Libraries/vcpkg.patch', '.github/scripts/patch-vcpkg-ffmpeg.ps1', '.github/scripts/vcpkg-packages.txt') }}
+          key: vcpkg-${{ runner.os }}-${{ env.VCPKG_COMMIT }}-${{ env.PLATFORM }}-${{ env.VCPKG_PLATFORM_TOOLSET }}-${{ hashFiles('Libraries/vcpkg.patch', '.github/scripts/patch-vcpkg-ffmpeg.ps1', '.github/scripts/vcpkg-packages.txt') }}
 
       - name: Bootstrap vcpkg
         shell: pwsh
@@ -192,6 +193,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "git fetch vcpkg commit '$env:VCPKG_COMMIT' failed." }
           git -C $root checkout $env:VCPKG_COMMIT
           if ($LASTEXITCODE -ne 0) { throw "git checkout vcpkg commit '$env:VCPKG_COMMIT' failed." }
+
+          foreach ($triplet in @('x64-uwp', 'x86-windows')) {
+            $tripletPath = Join-Path $root "triplets\$triplet.cmake"
+            if (-not (Test-Path $tripletPath)) {
+              throw "Unable to find vcpkg triplet '$tripletPath'."
+            }
+
+            $content = Get-Content $tripletPath -Raw
+            if ($content -notmatch 'VCPKG_PLATFORM_TOOLSET') {
+              Add-Content $tripletPath "`nset(VCPKG_PLATFORM_TOOLSET $env:VCPKG_PLATFORM_TOOLSET)"
+            }
+          }
 
           $patchPath = (Resolve-Path 'Libraries\vcpkg.patch').Path
           git -C $root apply --check $patchPath 2>$null
