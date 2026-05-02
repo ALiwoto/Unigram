@@ -106,7 +106,7 @@ jobs:
           $nuspec = Join-Path $PWD 'artifacts\vlc\VideoLAN.LibVLC.UWP.x64.nuspec'
           New-Item -ItemType Directory -Path (Split-Path $nuspec -Parent) -Force | Out-Null
           .\scripts\ci\new-vlc-x64-nuspec.ps1 -InputPath 'Libraries\vlc\VideoLAN.LibVLC.UWP.nuspec' -OutputPath $nuspec
-          nuget pack $nuspec -OutputDirectory Libraries -NoPackageAnalysis
+          nuget pack $nuspec -BasePath Libraries\vlc -OutputDirectory Libraries -NoPackageAnalysis
 
       - name: Detect Windows SDK
         id: windows-sdk
