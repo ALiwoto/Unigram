@@ -63,7 +63,7 @@ jobs:
 
   build:
     name: Build x64 package
-    runs-on: windows-2022
+    runs-on: windows-2025-vs2026
     needs: build-vlc
 
     steps:
@@ -325,7 +325,7 @@ jobs:
 
           $installationPath = & $vswhere -latest -products * -property installationPath
           if (-not $installationPath) {
-            throw 'Unable to locate a Visual Studio 2022 installation.'
+            throw 'Unable to locate a Visual Studio installation.'
           }
 
           New-Item -ItemType Junction -Path $communityPath -Target $installationPath | Out-Null
@@ -398,7 +398,6 @@ jobs:
             /p:Configuration=${env:CONFIGURATION} `
             /p:Platform=${env:PLATFORM} `
             /p:RestorePackagesConfig=true `
-            /p:PlatformToolset=v143 `
             /p:TargetPlatformVersion=${env:WINDOWS_SDK_VERSION} `
             /p:WindowsTargetPlatformVersion=${env:WINDOWS_SDK_VERSION}
 
@@ -431,7 +430,6 @@ jobs:
             /p:AppxBundlePlatforms=${env:PLATFORM} `
             /p:AppxBundle=Always `
             /p:RestorePackagesConfig=true `
-            /p:PlatformToolset=v143 `
             /p:TargetPlatformVersion=${env:WINDOWS_SDK_VERSION} `
             /p:WindowsTargetPlatformVersion=${env:WINDOWS_SDK_VERSION} `
             /p:AppxPackageDir="$appxDir\"
