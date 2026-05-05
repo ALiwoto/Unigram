@@ -268,11 +268,30 @@ jobs:
         id: tdjson-probe
         shell: pwsh
         run: |
-          $ready = (
-            (Test-Path 'Libraries\tdjson\td_api.tl') -and
-            (Test-Path 'Libraries\tdjson\x64\tdjson.dll') -and
-            (Test-Path 'Libraries\tdjson\x64\zlib1.dll')
+          $expected = @(
+            'Libraries\tdjson\td_api.tl',
+            'Libraries\tdjson\x64\tdjson.dll',
+            'Libraries\tdjson\x64\zlib1.dll'
           )
+          Write-Host 'TDLib restored files:'
+          foreach ($path in @('Libraries\tdjson\td_api.tl', 'Libraries\tdjson\x64')) {
+            if (Test-Path $path) {
+              Get-ChildItem $path -Force -Recurse |
+                Select-Object FullName, Length |
+                Format-Table -AutoSize
+            } else {
+              Write-Host "  Missing path: $path"
+            }
+          }
+
+          $missing = @($expected | Where-Object { -not (Test-Path $_) })
+          if ($missing) {
+            Write-Host 'TDLib cache is missing expected outputs:'
+            $missing | ForEach-Object { Write-Host "  $_" }
+          } else {
+            Write-Host 'TDLib cache contains expected outputs.'
+          }
+          $ready = ($missing.Count -eq 0)
           "ready=$($ready.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
 
       - name: Build TDLib
@@ -298,7 +317,7 @@ jobs:
           }
 
       - name: Save TDLib cache
-        if: steps.tdjson-cache.outputs.cache-hit != 'true'
+        if: steps.tdjson-probe.outputs.ready != 'true'
         uses: actions/cache/save@v4
         with:
           path: |
@@ -344,6 +363,26 @@ jobs:
           }
 
           New-Item -ItemType Junction -Path $communityPath -Target $installationPath | Out-Null
+
+      - name: Prepare Windows SDK path for WebRTC
+        shell: pwsh
+        run: |
+          $requestedSdk = '10.0.22621.0'
+          $installedSdk = $env:WINDOWS_SDK_VERSION
+          $sdkRoot = 'C:\Program Files (x86)\Windows Kits\10'
+
+          foreach ($subdir in @('Include', 'Lib')) {
+            $requestedPath = Join-Path $sdkRoot "$subdir\$requestedSdk"
+            $installedPath = Join-Path $sdkRoot "$subdir\$installedSdk"
+
+            if (-not (Test-Path $installedPath)) {
+              throw "Installed Windows SDK path '$installedPath' was not found."
+            }
+
+            if (-not (Test-Path $requestedPath)) {
+              New-Item -ItemType Junction -Path $requestedPath -Target $installedPath | Out-Null
+            }
+          }
 
       - name: Restore WebRTC cache
         id: webrtc-cache
