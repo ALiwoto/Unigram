@@ -377,6 +377,12 @@ jobs:
         shell: cmd
         run: |
           set "PATH=C:\depot_tools;C:\webrtc\src\buildtools\win;C:\webrtc\src\third_party\ninja;%PATH%"
+          set "INCLUDE="
+          set "LIB="
+          set "LIBPATH="
+          set "WindowsSDKDir="
+          set "WindowsSDKVersion="
+          set "UCRTVersion="
           where gn
           where ninja
           cd /d C:\webrtc\src
