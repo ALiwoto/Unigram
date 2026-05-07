@@ -12,7 +12,7 @@ concurrency:
 env:
   CONFIGURATION: Release
   PLATFORM: x64
-  VCPKG_COMMIT: db0aad6b4f71f360dc3b2261b29de51dce4fa59b
+  VCPKG_COMMIT: cff6ed45719c0162fa7065fdac90506a0add812c
   WEBRTC_BRANCH: branch-heads/6312
   WEBRTC_REF: m123
   VLC_VERSION: 3.0.22-rc1
@@ -61,67 +61,24 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  build:
-    name: Build x64 package
-    runs-on: windows-2025-vs2026
-    needs: build-vlc
+  build-windows-dependencies:
+    name: Build Windows dependencies
+    runs-on: windows-2022
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Checkout required submodules
+      - name: Checkout dependency submodules
         shell: pwsh
         run: |
           git submodule sync --recursive
           git submodule update --init --recursive `
-            Libraries/CoreWindowCustomDPI `
-            Libraries/flatbuffers `
-            Libraries/libprisma `
-            Libraries/libutf `
-            Libraries/libwebp `
             Libraries/tdlib `
             Libraries/tgcalls
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
-
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v2
-
-      - name: Report Visual Studio installation
-        shell: pwsh
-        run: |
-          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
-          if (-not (Test-Path $vswhere)) {
-            throw 'Unable to find vswhere.exe.'
-          }
-
-          & $vswhere -latest -products * -format json
-
-          $vcToolsRoot = 'C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC'
-          if (Test-Path $vcToolsRoot) {
-            Get-ChildItem $vcToolsRoot -Directory | Select-Object -ExpandProperty FullName
-          }
-
-      - name: Download LibVLC artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: vlc-x64
-          path: .ci-cache
-
-      - name: Restore LibVLC build tree
-        shell: pwsh
-        run: |
-          tar -xf .ci-cache\vlc-x64.tar.gz -C .
-
-      - name: Pack LibVLC NuGet
-        shell: pwsh
-        run: |
-          $nuspec = Join-Path $PWD 'artifacts\vlc\VideoLAN.LibVLC.UWP.x64.nuspec'
-          New-Item -ItemType Directory -Path (Split-Path $nuspec -Parent) -Force | Out-Null
-          .\.github\scripts\new-vlc-x64-nuspec.ps1 -InputPath 'Libraries\vlc\VideoLAN.LibVLC.UWP.nuspec' -OutputPath $nuspec
-          nuget pack $nuspec -BasePath Libraries\vlc -OutputDirectory Libraries -NoPackageAnalysis
 
       - name: Detect Windows SDK
         id: windows-sdk
@@ -139,15 +96,6 @@ jobs:
 
           "version=$sdk" >> $env:GITHUB_OUTPUT
           "WINDOWS_SDK_VERSION=$sdk" >> $env:GITHUB_ENV
-
-      - name: Generate Constants.Secret.cs
-        shell: pwsh
-        env:
-          UNIGRAM_API_ID: ${{ secrets.UNIGRAM_API_ID }}
-          UNIGRAM_API_HASH: ${{ secrets.UNIGRAM_API_HASH }}
-          UNIGRAM_APP_CHANNEL: ${{ secrets.UNIGRAM_APP_CHANNEL }}
-        run: |
-          .\.github\scripts\write-constants-secret.ps1
 
       - name: Compute dependency revisions
         id: revisions
@@ -242,8 +190,6 @@ jobs:
           & (Join-Path $root 'vcpkg.exe') install @packages
           if ($LASTEXITCODE -ne 0) { throw 'vcpkg install failed.' }
 
-          & (Join-Path $root 'vcpkg.exe') integrate install
-
       - name: Save vcpkg cache
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
@@ -274,6 +220,7 @@ jobs:
             'Libraries\tdjson\x64\libcrypto-3-x64.dll',
             'Libraries\tdjson\x64\libssl-3-x64.dll'
           )
+
           Write-Host 'TDLib restored files:'
           foreach ($path in @('Libraries\tdjson\td_api.tl', 'Libraries\tdjson\x64')) {
             if (Test-Path $path) {
@@ -294,26 +241,6 @@ jobs:
           }
           $ready = ($missing.Count -eq 0)
           "ready=$($ready.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
-
-      - name: Copy TDLib zlib runtime
-        shell: pwsh
-        run: |
-          $target = 'Libraries\tdjson\x64\zlib1.dll'
-          if (Test-Path $target) {
-            return
-          }
-
-          $source = '.ci\vcpkg\installed\x64-uwp\bin\zlib1.dll'
-          if (-not (Test-Path $source)) {
-            $source = Get-ChildItem '.ci\vcpkg\installed' -Recurse -Filter zlib1.dll |
-              Select-Object -First 1 -ExpandProperty FullName
-          }
-          if (-not $source) {
-            throw 'Unable to find vcpkg-provided zlib1.dll.'
-          }
-
-          New-Item -ItemType Directory -Path (Split-Path $target -Parent) -Force | Out-Null
-          Copy-Item -Path $source -Destination $target -Force
 
       - name: Build TDLib
         if: steps.tdjson-cache.outputs.cache-hit != 'true' || steps.tdjson-probe.outputs.ready != 'true'
@@ -337,8 +264,22 @@ jobs:
             Pop-Location
           }
 
+      - name: Show TDLib outputs
+        shell: pwsh
+        run: |
+          Write-Host 'TDLib output files:'
+          foreach ($path in @('Libraries\tdjson\td_api.tl', 'Libraries\tdjson\x64')) {
+            if (Test-Path $path) {
+              Get-ChildItem $path -Force -Recurse |
+                Select-Object FullName, Length |
+                Format-Table -AutoSize
+            } else {
+              Write-Host "  Missing path: $path"
+            }
+          }
+
       - name: Save TDLib cache
-        if: steps.tdjson-probe.outputs.ready != 'true'
+        if: ${{ steps.tdjson-cache.outputs.cache-hit != 'true' && steps.tdjson-probe.outputs.ready != 'true' }}
         uses: actions/cache/save@v4
         with:
           path: |
@@ -383,27 +324,8 @@ jobs:
             throw 'Unable to locate a Visual Studio installation.'
           }
 
+          New-Item -ItemType Directory -Path (Split-Path $communityPath -Parent) -Force | Out-Null
           New-Item -ItemType Junction -Path $communityPath -Target $installationPath | Out-Null
-
-      - name: Prepare Windows SDK path for WebRTC
-        shell: pwsh
-        run: |
-          $requestedSdk = '10.0.22621.0'
-          $installedSdk = $env:WINDOWS_SDK_VERSION
-          $sdkRoot = 'C:\Program Files (x86)\Windows Kits\10'
-
-          foreach ($subdir in @('Include', 'Lib')) {
-            $requestedPath = Join-Path $sdkRoot "$subdir\$requestedSdk"
-            $installedPath = Join-Path $sdkRoot "$subdir\$installedSdk"
-
-            if (-not (Test-Path $installedPath)) {
-              throw "Installed Windows SDK path '$installedPath' was not found."
-            }
-
-            if (-not (Test-Path $requestedPath)) {
-              New-Item -ItemType Junction -Path $requestedPath -Target $installedPath | Out-Null
-            }
-          }
 
       - name: Restore WebRTC cache
         id: webrtc-cache
@@ -425,6 +347,12 @@ jobs:
           "source_ready=$($sourceReady.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
           "build_ready=$($buildReady.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
 
+      - name: Reject incomplete WebRTC cache
+        if: ${{ steps.webrtc-cache.outputs.cache-hit == 'true' && (steps.webrtc-probe.outputs.source_ready != 'true' || steps.webrtc-probe.outputs.build_ready != 'true') }}
+        shell: pwsh
+        run: |
+          throw 'WebRTC cache was restored, but required source/build outputs are missing. Delete the WebRTC cache entry or change the WebRTC cache key before rebuilding.'
+
       - name: Acquire WebRTC source
         if: steps.webrtc-cache.outputs.cache-hit != 'true' || steps.webrtc-probe.outputs.source_ready != 'true'
         shell: cmd
@@ -437,12 +365,6 @@ jobs:
         shell: cmd
         run: |
           set "PATH=C:\depot_tools;C:\webrtc\src\buildtools\win;C:\webrtc\src\third_party\ninja;%PATH%"
-          set "INCLUDE="
-          set "LIB="
-          set "LIBPATH="
-          set "WindowsSDKDir="
-          set "WindowsSDKVersion="
-          set "UCRTVersion="
           where gn
           where ninja
           cd /d C:\webrtc\src
@@ -456,6 +378,205 @@ jobs:
             D:\depot_tools-cache
             D:\webrtc-cache
           key: ${{ steps.webrtc-cache.outputs.cache-primary-key }}
+
+      - name: Pack Windows dependency artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path .ci-artifacts -Force | Out-Null
+
+          $tdjsonRequired = @(
+            'Libraries\tdjson\td_api.tl',
+            'Libraries\tdjson\x64\tdjson.dll',
+            'Libraries\tdjson\x64\libcrypto-3-x64.dll',
+            'Libraries\tdjson\x64\libssl-3-x64.dll'
+          )
+          $missingTdjson = @($tdjsonRequired | Where-Object { -not (Test-Path $_) })
+          if ($missingTdjson) {
+            throw "TDLib is missing required outputs: $($missingTdjson -join ', ')"
+          }
+
+          $vcpkgRequired = @(
+            '.ci\vcpkg\vcpkg.exe',
+            '.ci\vcpkg\.vcpkg-root',
+            '.ci\vcpkg\installed',
+            '.ci\vcpkg\scripts',
+            '.ci\vcpkg\triplets'
+          )
+          $missingVcpkg = @($vcpkgRequired | Where-Object { -not (Test-Path $_) })
+          if ($missingVcpkg) {
+            throw "vcpkg is missing required outputs: $($missingVcpkg -join ', ')"
+          }
+
+          tar -czf .ci-artifacts\tdjson-x64.tar.gz Libraries\tdjson\td_api.tl Libraries\tdjson\x64
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to pack TDLib artifact.' }
+
+          tar -czf .ci-artifacts\vcpkg-x64.tar.gz .ci\vcpkg\vcpkg.exe .ci\vcpkg\.vcpkg-root .ci\vcpkg\installed .ci\vcpkg\scripts .ci\vcpkg\triplets
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to pack vcpkg artifact.' }
+
+      - name: Upload Windows dependency artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-dependencies-x64
+          path: .ci-artifacts
+          if-no-files-found: error
+          retention-days: 7
+
+  build:
+    name: Build x64 package
+    runs-on: windows-2025-vs2026
+    needs:
+      - build-vlc
+      - build-windows-dependencies
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout required submodules
+        shell: pwsh
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive `
+            Libraries/CoreWindowCustomDPI `
+            Libraries/flatbuffers `
+            Libraries/libprisma `
+            Libraries/libutf `
+            Libraries/libwebp `
+            Libraries/tgcalls
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Report Visual Studio installation
+        shell: pwsh
+        run: |
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          if (-not (Test-Path $vswhere)) {
+            throw 'Unable to find vswhere.exe.'
+          }
+
+          & $vswhere -latest -products * -format json
+
+          $vcToolsRoot = 'C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC'
+          if (Test-Path $vcToolsRoot) {
+            Get-ChildItem $vcToolsRoot -Directory | Select-Object -ExpandProperty FullName
+          }
+
+      - name: Download LibVLC artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: vlc-x64
+          path: .ci-cache
+
+      - name: Restore LibVLC build tree
+        shell: pwsh
+        run: |
+          tar -xf .ci-cache\vlc-x64.tar.gz -C .
+
+      - name: Pack LibVLC NuGet
+        shell: pwsh
+        run: |
+          $nuspec = Join-Path $PWD 'artifacts\vlc\VideoLAN.LibVLC.UWP.x64.nuspec'
+          New-Item -ItemType Directory -Path (Split-Path $nuspec -Parent) -Force | Out-Null
+          .\.github\scripts\new-vlc-x64-nuspec.ps1 -InputPath 'Libraries\vlc\VideoLAN.LibVLC.UWP.nuspec' -OutputPath $nuspec
+          nuget pack $nuspec -BasePath Libraries\vlc -OutputDirectory Libraries -NoPackageAnalysis
+
+      - name: Download Windows dependency artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-dependencies-x64
+          path: .ci-artifacts
+
+      - name: Restore Windows dependency artifacts
+        shell: pwsh
+        run: |
+          tar -xf .ci-artifacts\tdjson-x64.tar.gz -C .
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to restore TDLib artifact.' }
+
+          tar -xf .ci-artifacts\vcpkg-x64.tar.gz -C .
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to restore vcpkg artifact.' }
+
+          $root = (Resolve-Path '.ci\vcpkg').Path
+          & (Join-Path $root 'vcpkg.exe') integrate install
+          if ($LASTEXITCODE -ne 0) { throw 'vcpkg integrate install failed.' }
+
+      - name: Detect Windows SDK
+        id: windows-sdk
+        shell: pwsh
+        run: |
+          $root = 'C:\Program Files (x86)\Windows Kits\10\Include'
+          $sdk = Get-ChildItem $root -Directory |
+            Where-Object { Test-Path (Join-Path $_.FullName 'um\Windows.h') } |
+            Sort-Object Name -Descending |
+            Select-Object -First 1 -ExpandProperty Name
+
+          if (-not $sdk) {
+            throw 'No Windows SDK installation was found on the runner.'
+          }
+
+          "version=$sdk" >> $env:GITHUB_OUTPUT
+          "WINDOWS_SDK_VERSION=$sdk" >> $env:GITHUB_ENV
+
+      - name: Generate Constants.Secret.cs
+        shell: pwsh
+        env:
+          UNIGRAM_API_ID: ${{ secrets.UNIGRAM_API_ID }}
+          UNIGRAM_API_HASH: ${{ secrets.UNIGRAM_API_HASH }}
+          UNIGRAM_APP_CHANNEL: ${{ secrets.UNIGRAM_APP_CHANNEL }}
+        run: |
+          .\.github\scripts\write-constants-secret.ps1
+
+      - name: Compute dependency revisions
+        id: revisions
+        shell: pwsh
+        run: |
+          "tgcalls=$(git -C Libraries/tgcalls rev-parse HEAD)" >> $env:GITHUB_OUTPUT
+
+      - name: Prepare WebRTC storage
+        shell: pwsh
+        run: |
+          git config --global core.longpaths true
+
+          $webrtcTarget = 'D:\webrtc-cache'
+          $depotToolsTarget = 'D:\depot_tools-cache'
+
+          New-Item -ItemType Directory -Path $webrtcTarget -Force | Out-Null
+          New-Item -ItemType Directory -Path $depotToolsTarget -Force | Out-Null
+
+          if (-not (Test-Path 'C:\webrtc')) {
+            New-Item -ItemType Junction -Path 'C:\webrtc' -Target $webrtcTarget | Out-Null
+          }
+
+          if (-not (Test-Path 'C:\depot_tools')) {
+            New-Item -ItemType Junction -Path 'C:\depot_tools' -Target $depotToolsTarget | Out-Null
+          }
+
+      - name: Restore WebRTC cache
+        id: webrtc-cache
+        uses: actions/cache/restore@v4
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 60
+        with:
+          path: |
+            D:\depot_tools-cache
+            D:\webrtc-cache
+          key: webrtc-${{ runner.os }}-${{ env.WEBRTC_BRANCH }}-${{ env.WEBRTC_REF }}-${{ steps.revisions.outputs.tgcalls }}-${{ hashFiles('Libraries/webrtc/**') }}
+
+      - name: Verify WebRTC outputs
+        shell: pwsh
+        run: |
+          $expected = @(
+            'C:\webrtc\src\DEPS',
+            'C:\webrtc\src\third_party\libyuv\include\libyuv.h',
+            'C:\webrtc\src\out\msvc\uwp\release\x64\obj\webrtc.lib'
+          )
+          $missing = @($expected | Where-Object { -not (Test-Path $_) })
+          if ($missing) {
+            throw "WebRTC cache is missing required outputs. Missing: $($missing -join ', ')"
+          }
 
       - name: Restore NuGet caches
         id: nuget-cache
