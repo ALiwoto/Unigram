@@ -382,7 +382,7 @@ jobs:
       - name: Pack Windows dependency artifacts
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Path .ci-artifacts -Force | Out-Null
+          New-Item -ItemType Directory -Path ci-artifacts -Force | Out-Null
 
           $tdjsonRequired = @(
             'Libraries\tdjson\td_api.tl',
@@ -407,17 +407,21 @@ jobs:
             throw "vcpkg is missing required outputs: $($missingVcpkg -join ', ')"
           }
 
-          tar -czf .ci-artifacts\tdjson-x64.tar.gz Libraries\tdjson\td_api.tl Libraries\tdjson\x64
+          tar -czf ci-artifacts\tdjson-x64.tar.gz Libraries\tdjson\td_api.tl Libraries\tdjson\x64
           if ($LASTEXITCODE -ne 0) { throw 'Unable to pack TDLib artifact.' }
 
-          tar -czf .ci-artifacts\vcpkg-x64.tar.gz .ci\vcpkg\vcpkg.exe .ci\vcpkg\.vcpkg-root .ci\vcpkg\installed .ci\vcpkg\scripts .ci\vcpkg\triplets
+          tar -czf ci-artifacts\vcpkg-x64.tar.gz .ci\vcpkg\vcpkg.exe .ci\vcpkg\.vcpkg-root .ci\vcpkg\installed .ci\vcpkg\scripts .ci\vcpkg\triplets
           if ($LASTEXITCODE -ne 0) { throw 'Unable to pack vcpkg artifact.' }
+
+          Get-ChildItem ci-artifacts -Force |
+            Select-Object FullName, Length |
+            Format-Table -AutoSize
 
       - name: Upload Windows dependency artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-dependencies-x64
-          path: .ci-artifacts
+          path: ci-artifacts
           if-no-files-found: error
           retention-days: 7
 
@@ -488,15 +492,15 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: windows-dependencies-x64
-          path: .ci-artifacts
+          path: ci-artifacts
 
       - name: Restore Windows dependency artifacts
         shell: pwsh
         run: |
-          tar -xf .ci-artifacts\tdjson-x64.tar.gz -C .
+          tar -xf ci-artifacts\tdjson-x64.tar.gz -C .
           if ($LASTEXITCODE -ne 0) { throw 'Unable to restore TDLib artifact.' }
 
-          tar -xf .ci-artifacts\vcpkg-x64.tar.gz -C .
+          tar -xf ci-artifacts\vcpkg-x64.tar.gz -C .
           if ($LASTEXITCODE -ne 0) { throw 'Unable to restore vcpkg artifact.' }
 
           $root = (Resolve-Path '.ci\vcpkg').Path
