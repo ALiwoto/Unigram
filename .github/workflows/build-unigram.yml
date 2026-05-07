@@ -271,7 +271,8 @@ jobs:
           $expected = @(
             'Libraries\tdjson\td_api.tl',
             'Libraries\tdjson\x64\tdjson.dll',
-            'Libraries\tdjson\x64\zlib1.dll'
+            'Libraries\tdjson\x64\libcrypto-3-x64.dll',
+            'Libraries\tdjson\x64\libssl-3-x64.dll'
           )
           Write-Host 'TDLib restored files:'
           foreach ($path in @('Libraries\tdjson\td_api.tl', 'Libraries\tdjson\x64')) {
@@ -293,6 +294,26 @@ jobs:
           }
           $ready = ($missing.Count -eq 0)
           "ready=$($ready.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
+      - name: Copy TDLib zlib runtime
+        shell: pwsh
+        run: |
+          $target = 'Libraries\tdjson\x64\zlib1.dll'
+          if (Test-Path $target) {
+            return
+          }
+
+          $source = '.ci\vcpkg\installed\x64-uwp\bin\zlib1.dll'
+          if (-not (Test-Path $source)) {
+            $source = Get-ChildItem '.ci\vcpkg\installed' -Recurse -Filter zlib1.dll |
+              Select-Object -First 1 -ExpandProperty FullName
+          }
+          if (-not $source) {
+            throw 'Unable to find vcpkg-provided zlib1.dll.'
+          }
+
+          New-Item -ItemType Directory -Path (Split-Path $target -Parent) -Force | Out-Null
+          Copy-Item -Path $source -Destination $target -Force
 
       - name: Build TDLib
         if: steps.tdjson-cache.outputs.cache-hit != 'true' || steps.tdjson-probe.outputs.ready != 'true'
