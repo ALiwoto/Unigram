@@ -86,6 +86,13 @@ namespace Telegram.ViewModels
 
         public long LinkedChatId { get; private set; }
 
+        private DeleteMessageReactionsFromSender _deleteReactions;
+        public DeleteMessageReactionsFromSender DeleteReactions
+        {
+            get => _deleteReactions;
+            set => Set(ref _deleteReactions, value);
+        }
+
         private ReportMessageReactions _reportReactions;
         public ReportMessageReactions ReportReactions
         {
@@ -115,6 +122,11 @@ namespace Telegram.ViewModels
                         Topic = new MessageTopicForum(topic.Info.ForumTopicId);
                     }
                 }
+            }
+
+            if (state != null && state.TryGet("delete_reactions", out DeleteMessageReactionsFromSender deleteReactions))
+            {
+                DeleteReactions = deleteReactions;
             }
 
             if (state != null && state.TryGet("report_reactions", out ReportMessageReactions reportReactions))
@@ -1214,29 +1226,7 @@ namespace Telegram.ViewModels
             }
 
             var response = await ClientService.SendAsync(new JoinChat(chat.Id));
-            if (response is Error error)
-            {
-                if (error.MessageEquals(ErrorType.INVITE_REQUEST_SENT))
-                {
-                    await ShowPopupAsync(chat.Type is ChatTypeSupergroup supergroup && supergroup.IsChannel ? Strings.RequestToJoinChannelSentDescription : Strings.RequestToJoinGroupSentDescription, Strings.RequestToJoinSent, Strings.OK);
-                    return;
-
-                    var message = Strings.RequestToJoinSent + Environment.NewLine + (chat.Type is ChatTypeSupergroup supergroup2 && supergroup2.IsChannel ? Strings.RequestToJoinChannelSentDescription : Strings.RequestToJoinGroupSentDescription);
-                    var entity = new TextEntity(0, Strings.RequestToJoinSent.Length, new TextEntityTypeBold());
-
-                    var text = new FormattedText(message, new[] { entity });
-
-                    ToastPopup.Show(XamlRoot, text, ToastPopupIcon.JoinRequested);
-                }
-                else if (error.MessageEquals(ErrorType.CHANNELS_TOO_MUCH))
-                {
-                    NavigationService.ShowLimitReached(new PremiumLimitTypeSupergroupCount());
-                }
-                else
-                {
-                    ShowToast(error);
-                }
-            }
+            MessageHelper.HandleChatJoinResult(ClientService, NavigationService, chat.Id, chat.Type is ChatTypeSupergroup { IsChannel: true }, response);
         }
 
         public void ShowRating()
@@ -1513,6 +1503,36 @@ namespace Telegram.ViewModels
             }
 
             MessageHelper.NavigateToMainWebApp(ClientService, NavigationService, user, string.Empty, new WebAppOpenModeFullSize());
+        }
+
+        public async void DeleteReaction()
+        {
+            var deleteReactions = DeleteReactions;
+            if (deleteReactions == null)
+            {
+                return;
+            }
+
+            var popup = new MessagePopup
+            {
+                Message = Strings.DeleteAlertReaction,
+                Title = Strings.DeleteReaction,
+                PrimaryButtonText = Strings.Delete,
+                SecondaryButtonText = Strings.Cancel,
+                IsChecked = true,
+                PrimaryButtonStyle = BootStrapper.Current.Resources["DangerButtonStyle"] as Style
+            };
+
+            var confirm = await ShowPopupAsync(popup);
+            if (confirm == ContentDialogResult.Primary)
+            {
+                DeleteReactions = null;
+                Delegate?.UpdateChat(Chat);
+
+                ClientService.Send(deleteReactions);
+
+                ShowToast(Strings.ReactionDeleteSent, ToastPopupIcon.Info);
+            }
         }
 
         public async void BanAndReport()

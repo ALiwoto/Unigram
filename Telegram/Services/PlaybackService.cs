@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Telegram.Common;
 using Telegram.Converters;
 using Telegram.Native.Media;
 using Telegram.Streams;
@@ -710,6 +711,15 @@ namespace Telegram.Services
 
         public void Play(PlaybackItem item)
         {
+            try
+            {
+                _transport ??= WM.SystemMediaTransportControls.GetForCurrentView();
+            }
+            catch
+            {
+                // All the remote procedure calls must be wrapped in a try-catch block
+            }
+
             lock (_mediaPlayerLock)
             {
                 SetSource(_player, item);
@@ -996,6 +1006,8 @@ namespace Telegram.Services
         public int Duration { get; protected set; }
 
         public bool CanChangePlaybackRate { get; protected set; }
+
+        public abstract InputMessageContent ToInputMessage();
     }
 
     public partial class PlaybackItemMessage : PlaybackItem
@@ -1138,6 +1150,58 @@ namespace Telegram.Services
                     Performer = date;
                 }
             }
+            else if (message.Content is MessageRichMessage richMessage)
+            {
+                var block = PageBlockHelper.FindFirstMedia(richMessage.Message.Blocks, PageBlockMediaKind.Audible);
+                if (block is PageBlockAudio blockAudio)
+                {
+                    Document = blockAudio.Audio.AudioValue;
+                    Duration = blockAudio.Audio.Duration;
+                    CanChangePlaybackRate = blockAudio.Audio.Duration >= 10 * 60;
+
+                    if (string.IsNullOrEmpty(blockAudio.Audio.Title))
+                    {
+                        Title = blockAudio.Audio.FileName;
+                        Performer = string.Empty;
+                    }
+                    else
+                    {
+                        Title = blockAudio.Audio.Title;
+                        Performer = blockAudio.Audio.Performer;
+                    }
+                }
+                else if (block is PageBlockVoiceNote blockVoiceNote)
+                {
+                    Document = blockVoiceNote.VoiceNote.Voice;
+                    Duration = blockVoiceNote.VoiceNote.Duration;
+                    CanChangePlaybackRate = true;
+
+                    var title = string.Empty;
+                    var date = Formatter.DateAt(message.Date);
+
+                    if (message.ClientService.TryGetUser(message.SenderId, out Telegram.Td.Api.User senderUser))
+                    {
+                        title = senderUser.Id == message.ClientService.Options.MyId ? Strings.ChatYourSelfName : senderUser.FullName();
+                    }
+                    else if (message.ClientService.TryGetChat(message.SenderId, out Chat senderChat))
+                    {
+                        title = message.ClientService.GetTitle(senderChat);
+                    }
+
+                    Title = title;
+                    Performer = date;
+                }
+            }
+        }
+
+        public override InputMessageContent ToInputMessage()
+        {
+            if (Message.Content is MessageAudio messageAudio)
+            {
+                return new InputMessageAudio(new InputAudio(new InputFileId(messageAudio.Audio.AudioValue.Id), messageAudio.Audio.AlbumCoverThumbnail.ToInput(), messageAudio.Audio.Duration, messageAudio.Audio.Title, messageAudio.Audio.Performer), null);
+            }
+
+            return null;
         }
     }
 
@@ -1172,9 +1236,9 @@ namespace Telegram.Services
             }
         }
 
-        public InputMessageContent ToInputMessage()
+        public override InputMessageContent ToInputMessage()
         {
-            return new InputMessageAudio(new InputFileId(Audio.AudioValue.Id), Audio.AlbumCoverThumbnail.ToInput(), Audio.Duration, Audio.Title, Audio.Performer, null);
+            return new InputMessageAudio(new InputAudio(new InputFileId(Audio.AudioValue.Id), Audio.AlbumCoverThumbnail.ToInput(), Audio.Duration, Audio.Title, Audio.Performer), null);
         }
     }
 }

@@ -295,7 +295,7 @@ namespace Telegram.Controls.Chats
         {
             if (Field.State == ChatSearchState.Members)
             {
-                ViewModel.Autocomplete = new UsernameCollection(ViewModel.ClientService, ViewModel.Dialog.Chat.Id, ViewModel.Dialog.TopicId, Field.Text, false, true, true);
+                ViewModel.Autocomplete = new UsernameCollection(ViewModel.ClientService, ViewModel.Dialog.Chat.Id, ViewModel.Dialog.TopicId, Field.Text, false, false, true, true);
             }
 
             DeleteButton.Visibility = string.IsNullOrEmpty(Field.Text) && Field.State == ChatSearchState.Text ? Visibility.Collapsed : Visibility.Visible;
@@ -391,7 +391,7 @@ namespace Telegram.Controls.Chats
             {
                 case ChatSearchState.Members:
                     FilterByMember.Visibility = Visibility.Collapsed;
-                    viewModel.Autocomplete = new UsernameCollection(viewModel.ClientService, viewModel.Dialog.Chat.Id, viewModel.Dialog.TopicId, string.Empty, false, true, true);
+                    viewModel.Autocomplete = new UsernameCollection(viewModel.ClientService, viewModel.Dialog.Chat.Id, viewModel.Dialog.TopicId, string.Empty, false, false, true, true);
                     break;
                 case ChatSearchState.TextByMember:
                     FilterByMember.Visibility = Visibility.Collapsed;
@@ -454,9 +454,9 @@ namespace Telegram.Controls.Chats
 
         private void Autocomplete_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            var visible = e.NewSize.Width > 0 && e.NewSize.Height >= 2;
-            visible &= ListAutocomplete.Visibility == Visibility.Visible;
-            Field.CornerRadius = new CornerRadius(4, 4, visible ? 0 : 4, visible ? 0 : 4);
+            //var visible = e.NewSize.Width > 0 && e.NewSize.Height >= 2;
+            //visible &= ListAutocomplete.Visibility == Visibility.Visible;
+            //Field.CornerRadius = new CornerRadius(4, 4, visible ? 0 : 4, visible ? 0 : 4);
         }
 
         private void OnGotFocus(object sender, RoutedEventArgs e)
@@ -471,9 +471,9 @@ namespace Telegram.Controls.Chats
 
         private Visibility ConvertAutocompleteVisibility(object autocomplete)
         {
-            var visible = ListAutocomplete.ActualWidth > 0 && ListAutocomplete.ActualHeight >= 2;
-            visible &= autocomplete != null;
-            Field.CornerRadius = new CornerRadius(4, 4, visible ? 0 : 4, visible ? 0 : 4);
+            //var visible = ListAutocomplete.ActualWidth > 0 && ListAutocomplete.ActualHeight >= 2;
+            //visible &= autocomplete != null;
+            //Field.CornerRadius = new CornerRadius(4, 4, visible ? 0 : 4, visible ? 0 : 4);
 
             return autocomplete != null
                 ? Visibility.Visible

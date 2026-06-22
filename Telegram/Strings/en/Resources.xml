@@ -13318,6 +13318,11 @@
     <string name="ReportReaction">Report reaction</string>
     <string name="ReportAlertReaction">Are you sure you want to report reaction from this user?</string>
     <string name="ReportChatSent">Report sent</string>
+    <string name="DeleteReactionMenu">Delete Reaction</string>
+    <string name="DeleteAlertReaction">Are you sure you want to delete the reaction from this user?</string>
+    <string name="DeleteReaction">Delete Reaction</string>
+    <string name="ReportReactionAndBan2">Ban and Report Reaction</string>
+    <string name="ReactionDeleteSent">Reaction deleted</string>
 
     <string name="DisableSharingActionOther">{0} disabled sharing in this chat</string>
     <string name="DisableSharingActionStillDisabled">Sharing in this chat is still disabled</string>
@@ -13492,6 +13497,28 @@
     <string name="AIEditorResult">Result</string>
     <string name="AIEditorToneNeutral">Neutral</string>
     <string name="AIEditorEmojify">emojify</string>
+    <string name="AIEditorStyleText">Add this style to instantly\nrewrite your messages.</string>
+    <string name="AIEditorBefore">Before</string>
+    <string name="AIEditorAfter">After</string>
+    <string name="AIEditorAnotherExample">Another Example</string>
+    <string name="AIEditorUsedBy_one">Used by {0} person.</string>
+    <string name="AIEditorUsedBy_other">Used by {0} people.</string>
+    <string name="AIEditorCreatedBy">Created by **{0}**.</string>
+    <string name="AIEditorEditStyle">Edit Style</string>
+    <string name="AIEditorShareStyle">Share Style</string>
+    <string name="AIEditorAddStyle">Add Style</string>
+    <string name="AIEditorStyleDone">Done</string>
+    <string name="AIEditorNewStyle">New Style</string>
+    <string name="AIEditorDeleteStyle">Delete Style</string>
+    <string name="AIEditorRemoveStyle">Remove Style</string>
+    <string name="AIEditorDeleteStyleText">Are you sure you want to delete this style? It will be removed for everyone who installed it.</string>
+    <string name="AIEditorStyleTitle">Style Name</string>
+    <string name="AIEditorStyleTitleHint">for example: \"Pirate\"</string>
+    <string name="AIEditorStylePrompt">Instructions</string>
+    <string name="AIEditorStylePromptHint">for example, \"Write like a swashbuckling pirate. Use arr, ye, matey, and talk about treasure and the sea\"</string>
+    <string name="AIEditorStyleAddLink">Add a link to my account</string>
+    <string name="AIEditorStyleCreate">Create</string>
+    <string name="AIEditorStyleEdit">Save</string>
 
     <string name="PollAddingActionYou">You added \"{0}\" to the poll</string>
     <string name="PollAddingActionOther">un1 added \"{0}\" to the poll</string>
@@ -13503,5 +13530,101 @@
     <string name="PollSubmitVotesNoCaps">Vote</string>
     
     <string name="AttachLivePhoto">Motion Photo</string>
+    <string name="ProfileUnofficialSecurityRisk">{0} uses an unofficial Telegram client — messages to this user may be less secure.</string>
+
+    <string name="ActionManagedBotCreated">You created un1 bot for un2 to manage</string>
+    <string name="CreateManagedBotTitle">Create Bot</string>
+    <string name="CreateManagedBotText">**{0}** would like you to create\nand manage a chatbot on your behalf.</string>
+    <string name="CreateManagedBotName">Bot Name</string>
+    <string name="CreateManagedBotNameInfo">Tap to edit bot name.</string>
+    <string name="CreateManagedBotUsername">Username</string>
+    <string name="CreateManagedBotUsernameInfo">Tap to edit bot username.</string>
+    <string name="CreateManagedBotButton">Create</string>
+    <string name="CreateManagedBotCreatedTitle">{0} created!</string>
+    <string name="CreateManagedBotCreatedText">**{0}** will manage this bot for you.</string>
+    <string name="CreateManagedBotUnsupported">**{0}** doesn’t support Bot Management mode.</string>
+    <string name="ProfileBotManagedBy">Created and managed by **@{0}**</string>
+    <string name="ManagedBotChatInfo">**{0}** is ready!\n\nTap **Start** below to test your new chatbot. Its behavior is defined by **{0}**.</string>
+    <string name="CreateManagedBotLimitTitle">Bot Limit Exceeded</string>
+    <string name="CreateManagedBotLimitTextTime">You can create another bot in {0}.</string>
+    <string name="CreateManagedBotLimitTextPremium">Subscribe to **Premium** to create up to {0} bots, or delete one of your {0} bots via @BotFather</string>
+    <string name="CreateManagedBotLimitText">You can create up to {0} bots, or delete your current ones via @BotFather</string>
+
+    <string name="AudioSearchLocal">Local Music</string>
+    <string name="AudioSearchChats">Shared Music</string>
+    <string name="AudioSearchProfile">Profile Music</string>
+    <string name="AudioSearchGlobal">Global Search</string>
+
+    <string name="GuestBotFor">for</string>
+
+    <string name="PollV2ToastOnlySubscribersCanVote">Only subscribers of **{0}** can vote.</string>
+    <string name="PollV2ToastOnlySubscribersJoined24hCanVote">Only subscribers who joined more than **24 hours** ago can vote.</string>
+    <string name="PollV2ToastOnlyUsersFromCountriesCanVoteOne">Only users from **{0}** can vote.</string>
+    <string name="PollV2ToastOnlyUsersFromCountriesCanVoteOther">Only users from **{0}** and **{1}** can vote.</string>
+    <string name="PollV2ShowWhoVoted">Show Who Voted</string>
+    <string name="PollV2ShowWhoVotedInfo">Display voter name on each option</string>
+    <string name="PollV2AllowMultipleAnswers">Allow Multiple Answers</string>
+    <string name="PollV2AllowMultipleAnswersInfo">Voters can select more than one option</string>
+    <string name="PollV2AllowAddingOptions">Allow Adding Options</string>
+    <string name="PollV2AllowAddingOptionsInfo">Participants can suggest new options</string>
+    <string name="PollV2AllowRevoting">Allow Revoting</string>
+    <string name="PollV2AllowRevotingInfo">Voters can change their vote</string>
+    <string name="PollV2ShuffleOptions">Shuffle Options</string>
+    <string name="PollV2ShuffleOptionsInfo">Answers appear in a random order for each voter</string>
+    <string name="PollV2SetCorrectAnswer">Set Correct Answer</string>
+    <string name="PollV2SetCorrectAnswerInfo">Mark one option as the right answer</string>
+    <string name="PollV2LimitDuration">Limit Duration</string>
+    <string name="PollV2LimitDurationInfo">Automatically close the poll at a set time</string>
+    <string name="PollV2RestrictToSubscribers">Restrict to Subscribers</string>
+    <string name="PollV2RestrictToSubscribersInfo">Only subscribers who joined\n24+ hours ago can vote</string>
+    <string name="PollV2LimitByCountry">Limit by Country</string>
+    <string name="PollV2LimitByCountryInfo">Only users from selected\ncountries can vote</string>
+    <string name="PollV2AllowedCountries">Allowed Countries</string>
+    <string name="BoostingSelectCountry">Select Countries</string>
+    <string name="QuestionDescriptionHint">Add Description (optional)</string>
+    <string name="PollV2AllowedCountriesListManyP_one">{0} country</string>
+    <string name="PollV2AllowedCountriesListManyP_other">{0} countries</string>
+    <string name="SearchCountriesSelect">Select</string>
+    <string name="PollV2PollEnds">Poll ends</string>
+    <string name="PollV2PollDuration">Poll duration</string>
+    <string name="PollV2PollDurationOptionCustom">Custom</string>
+    <string name="PollV2HideResults">Hide results</string>
+    <string name="PollV2HideResultsInfo">When enabled, results will not be visible until the poll closes.</string>
+
+    <string name="UserRestrictionsSendReactions">Send Reactions</string>
+    <string name="EventLogRestrictedSendReactions">Send Reactions</string>
+    <string name="SharedPollTab">Polls</string>
+    <string name="ProfilePollsCount_one">{0} poll</string>
+    <string name="ProfilePollsCount_other">{0} polls</string>
+    
+    <string name="EditAccountInfoHeader">Your Info</string>
+    <string name="EditProfileHours">Change Opening Hours</string>
+    <string name="EditProfileLocation">Change Location</string>
+    <string name="EditProfileChatAutomation">Chat Automation</string>
+    <string name="EditProfileChatAutomationInfo">Add a bot to answer messages on your behalf.</string>
+
+    <string name="GuardBotJoinRequestApproved">Your request to join **{0}** has been approved</string>
+    <string name="GuardBotJoinRequestDeclined">Your request to join **{0}** has been declined</string>
+    <string name="GuardBotJoinRequestQueued">Your request to join **{0}** has been sent to the admins</string>
+
+    <string name="ChannelSettingsJoinRequestInfo2">Admin must approve anyone who wants to join the channel.</string>
+    <string name="ChannelSettingsJoinRequestInfoManagedBy">Admin must approve anyone who wants to join the channel. Managed by **{0}**</string>
+    <string name="GroupPrivateSettingsJoinRequestInfo2">Admin must approve anyone who wants to join the group.</string>
+    <string name="GroupPrivateSettingsJoinRequestInfoManagedBy">Admin must approve anyone who wants to join the group. Managed by **{0}**</string>
+    <string name="GroupPublicSettingsJoinRequestInfo2">Admin must approve anyone who wants to send a message in the group.</string>
+    <string name="GroupPublicSettingsJoinRequestInfoManagedBy">Admin must approve anyone who wants to send a message in the group. Managed by **{0}**</string>
+    <string name="EditAdminProcessJoinRequests">Process Join Requests</string>
+    <string name="EditAdminProcessJoinRequestsInfo">Allow this bot to approve new members using its own interfaces, such as captchas.</string>
+    <string name="ApproveNewMembersApplyToLinksApply">Apply</string>
+    <string name="ApproveNewMembersApplyToLinksDontApply">Don\'t Apply</string>
+    <string name="ApproveNewMembersApplyToLinksTitle">Apply to existing invite links</string>
+    <string name="ApproveNewMembersDisableForLinksChannel_one">Also disable **Approve New Members** for **{0} existing invite link** in this channel?</string>
+    <string name="ApproveNewMembersDisableForLinksChannel_other">Also disable **Approve New Members** for **{0} existing invite links** in this channel?</string>
+    <string name="ApproveNewMembersDisableForLinks_one">Also disable **Approve New Members** for **{0} existing invite link** in this group?</string>
+    <string name="ApproveNewMembersDisableForLinks_other">Also disable **Approve New Members** for **{0} existing invite links** in this group?</string>
+    <string name="ApproveNewMembersEnableForLinksChannel_one">Also enable **Approve New Members** for **{0} existing invite link** in this channel?</string>
+    <string name="ApproveNewMembersEnableForLinksChannel_other">Also enable **Approve New Members** for **{0} existing invite links** in this channel?</string>
+    <string name="ApproveNewMembersEnableForLinks_one">Also enable **Approve New Members** for **{0} existing invite link** in this group?</string>
+    <string name="ApproveNewMembersEnableForLinks_other">Also enable **Approve New Members** for **{0} existing invite links** in this group?</string>
 
 </resources>

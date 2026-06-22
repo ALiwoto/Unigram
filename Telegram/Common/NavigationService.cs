@@ -44,11 +44,11 @@ namespace Telegram.Common
             }
         }
 
-        public static void NavigateToWebApp(this INavigationService service, User botUser, string url, long launchId = 0, AttachmentMenuBot menuBot = null, WebAppOpenMode openMode = null, Chat sourceChat = null, InternalLinkType sourceLink = null, string buttonText = null)
+        public static void NavigateToWebApp(this INavigationService service, User botUser, WebAppUrl url, long launchId = 0, AttachmentMenuBot menuBot = null, WebAppOpenMode openMode = null, OpenUrlSource source = null, InternalLinkType sourceLink = null, string buttonText = null)
         {
             if (service is TLNavigationService serviceEx)
             {
-                serviceEx.NavigateToWebApp(botUser, url, launchId, menuBot, openMode, sourceChat, sourceLink, buttonText);
+                serviceEx.NavigateToWebApp(botUser, url, launchId, menuBot, openMode, source, sourceLink, buttonText);
             }
         }
 
@@ -65,6 +65,14 @@ namespace Telegram.Common
             if (service is TLNavigationService serviceEx)
             {
                 serviceEx.NavigateToInstant(url, fallbackUrl);
+            }
+        }
+
+        public static void NavigateToInstant(this INavigationService service, WebPageInstantView instantView, string url)
+        {
+            if (service is TLNavigationService serviceEx)
+            {
+                serviceEx.NavigateToInstant(instantView, url);
             }
         }
 

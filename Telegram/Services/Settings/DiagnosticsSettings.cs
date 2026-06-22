@@ -163,6 +163,13 @@ namespace Telegram.Services.Settings
             set => AddOrUpdateValue(ref _bubbleElevationDebug, "BubbleElevationDebug", value);
         }
 
+        private bool? _bubbleRecyclingDebug;
+        public bool BubbleRecyclingDebug
+        {
+            get => _bubbleRecyclingDebug ??= GetValueOrDefault("BubbleRecyclingDebug", true);
+            set => AddOrUpdateValue(ref _bubbleRecyclingDebug, "BubbleRecyclingDebug", value);
+        }
+
         private bool? _windowResizeDebug;
         public bool WindowResizeDebug
         {
@@ -196,6 +203,13 @@ namespace Telegram.Services.Settings
         {
             get => _connectedAnimationsDebug ??= GetValueOrDefault("ConnectedAnimationsDebug", ApiInfo.IsPackagedRelease);
             set => AddOrUpdateValue(ref _connectedAnimationsDebug, "ConnectedAnimationsDebug", value);
+        }
+
+        private bool? _richMessagesDebug;
+        public bool RichMessagesDebug
+        {
+            get => _richMessagesDebug ??= GetValueOrDefault("RichMessagesDebug", ApiInfo.IsPackagedRelease);
+            set => AddOrUpdateValue(ref _richMessagesDebug, "RichMessagesDebug", value);
         }
 
         public bool IsLastErrorDiskFull { get; set; }

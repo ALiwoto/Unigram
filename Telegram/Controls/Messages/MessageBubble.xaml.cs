@@ -1130,7 +1130,7 @@ namespace Telegram.Controls.Messages
                 HeaderLinkRun.Text = title;
                 Identity.ClearStatus();
             }
-            else if (!light && isFirst && !outgoing && (message.HasSenderPhoto || (!message.IsChannelPost && !message.IsDirectMessagesChatTopicMessage)) && (chat.Type is ChatTypeBasicGroup || chat.Type is ChatTypeSupergroup))
+            else if (!light && isFirst && !outgoing && (message.HasSenderPhoto || (!message.IsChannelPost && !message.IsDirectMessagesChatTopicMessage)) && (chat.Type is ChatTypeBasicGroup || chat.Type is ChatTypeSupergroup || message.GuestBotCallerId != null))
             {
                 if (message.ClientService.TryGetUser(message.SenderId, out User senderUser))
                 {
@@ -1156,6 +1156,27 @@ namespace Telegram.Controls.Messages
 
                     HeaderLinkRun.Text = title;
                     Identity.SetStatus(message.ClientService, senderUser);
+
+                    if (message.GuestBotCallerId != null)
+                    {
+                        if (HeaderLabel.Inlines.Count > 1)
+                        {
+                            HeaderLabel.Inlines.RemoveAt(HeaderLabel.Inlines.Count - 1);
+                        }
+
+                        var run = new Run
+                        {
+                            Text = string.Format(header ? " {0} {1}" : "{0} {1}", Strings.GuestBotFor, message.ClientService.GetTitle(message.GuestBotCallerId, true)),
+                            FontWeight = FontWeights.Normal
+                        };
+
+                        if (foreground != null)
+                        {
+                            run.Foreground = foreground;
+                        }
+
+                        HeaderLabel.Inlines.Add(run);
+                    }
                 }
                 else if (message.ClientService.TryGetChat(message.SenderId, out Chat senderChat))
                 {
@@ -1259,7 +1280,7 @@ namespace Telegram.Controls.Messages
 
                 HeaderLabel.Inlines.Add(hyperlink);
             }
-            else if (header && HeaderLabel?.Inlines.Count > 1)
+            else if (header && HeaderLabel?.Inlines.Count > 1 && message.GuestBotCallerId == null)
             {
                 HeaderLabel.Inlines.RemoveAt(HeaderLabel.Inlines.Count - 1);
             }
@@ -1852,7 +1873,7 @@ namespace Telegram.Controls.Messages
                     FooterToNormal();
                     bottom = 4;
                 }
-                else if (content is MessageCall || (content is MessageLocation location && location.LivePeriod > 0 && !location.IsExpired(message.Date)))
+                else if (content is MessageCall || (content is MessageLiveLocation location && !location.Location.IsExpired(location.ExpiresIn, message.Date)))
                 {
                     FooterToHidden();
                 }
@@ -1920,6 +1941,15 @@ namespace Telegram.Controls.Messages
             {
                 ContentPanel.Padding = new Thickness(0, 4, 0, 0);
                 Media.Margin = new Thickness(10, 4, 10, 0);
+                FooterToNormal();
+                Grid.SetRow(Footer, 4);
+                Grid.SetRow(Message, 2);
+                Panel.Placeholder = false;
+            }
+            else if (content is MessageRichMessage)
+            {
+                ContentPanel.Padding = new Thickness(0, 0, 0, 0);
+                Media.Margin = new Thickness(0, 0, 0, 0);
                 FooterToNormal();
                 Grid.SetRow(Footer, 4);
                 Grid.SetRow(Message, 2);
@@ -2012,7 +2042,8 @@ namespace Telegram.Controls.Messages
 
             Media.Child = content switch
             {
-                MessageText textMessage when textMessage.LinkPreview != null => new WebPageContent(message),
+                MessageText textMessage when textMessage.LinkPreview != null => /*textMessage.LinkPreview.InstantViewVersion != 0 ? new InstantContent(message) :*/ new WebPageContent(message),
+                MessageRichMessage => new InstantContent(message),
                 MessageAlbum => new AlbumContent(message),
                 MessagePaidAlbum => new PaidMediaContent(message),
                 MessageAnimation => new AnimationContent(message),
@@ -2027,6 +2058,7 @@ namespace Telegram.Controls.Messages
                 MessageInvoice invoice when invoice.PaidMedia is PaidMediaPreview => new InvoicePreviewContent(message),
                 MessageInvoice invoice when invoice.ProductInfo.Photo != null => new InvoicePhotoContent(message),
                 MessageInvoice => new InvoiceContent(message),
+                MessageLiveLocation => new LiveLocationContent(message),
                 MessageLocation => new LocationContent(message),
                 MessagePhoto => new PhotoContent(message),
                 MessagePoll => new PollContent(message),
@@ -2077,7 +2109,7 @@ namespace Telegram.Controls.Messages
                 _ => message.Text
             };
 
-            if (styledText != null && message.Content is not MessageAnimatedEmoji)
+            if (styledText != null && message.Content is not MessageAnimatedEmoji and not MessageRichMessage)
             {
                 var fontSize = 0d;
 
@@ -2771,7 +2803,9 @@ namespace Telegram.Controls.Messages
                 }
             }
 
-            brush ??= _highlight.Compositor.CreateColorBrush(Theme.Accent);
+            brush ??= _highlight.Compositor.CreateColorBrush(ActualTheme == ElementTheme.Light
+                ? Theme.AccentLight.Default
+                : Theme.AccentDark.Default);
 
             var solid = BootStrapper.Current.Compositor.CreateSpriteVisual();
             solid.Size = target.ActualSize;
@@ -3479,7 +3513,7 @@ namespace Telegram.Controls.Messages
 
             if (sender != null)
             {
-                var message = new Message(chat.Id, sender, 0, null, null, false, false, false, false, false, false, false, false, false, 0, 0, null, null, null, Array.Empty<UnreadReaction>(), null, null, null, null, null, 0, 0, 0, 0, 0, string.Empty, 0, string.Empty, 0, 0, null, string.Empty, null, null);
+                var message = new Message(chat.Id, sender, 0, null, null, false, false, false, false, false, false, false, false, false, false, 0, 0, null, null, null, Array.Empty<UnreadReaction>(), null, null, null, null, null, 0, 0, 0, null, 0, 0, string.Empty, 0, string.Empty, 0, 0, null, string.Empty, null, null);
                 var settings = clientService.Session.Resolve<ISettingsService>();
 
                 var delegato = new ChatMessageDelegate(clientService, settings, chat);
@@ -3952,6 +3986,8 @@ namespace Telegram.Controls.Messages
                         || (width && invoice.ProductInfo.Photo != null);
                 case MessageAsyncStory story:
                     return story.State != MessageStoryState.Expired;
+                case MessageRichMessage richMessage:
+                    return richMessage.Message.Blocks[^1] is PageBlockAnimation { Caption: null } or PageBlockCollage { Caption : null } or PageBlockMap { Caption: null } or PageBlockPhoto { Caption: null } or PageBlockSlideshow { Caption: null } or PageBlockVideo { Caption: null };
                 default:
                     return false;
             }

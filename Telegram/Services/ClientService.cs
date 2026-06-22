@@ -114,6 +114,7 @@ namespace Telegram.Services
         IList<string> ActiveReactions { get; }
 
         IList<TextCompositionStyle> TextCompositionStyles { get; }
+        bool IsTextCompositionStyleInstalled(string name);
 
         IList<string> AnimationSearchEmojis { get; }
         string AnimationSearchProvider { get; }
@@ -812,6 +813,11 @@ namespace Telegram.Services
         public IList<string> ActiveReactions => _activeReactions;
 
         public IList<TextCompositionStyle> TextCompositionStyles => _textCompositionStyles ?? Array.Empty<TextCompositionStyle>();
+
+        public bool IsTextCompositionStyleInstalled(string name)
+        {
+            return TextCompositionStyles.Any(x => x.Name == name);
+        }
 
         public IDictionary<int, NameColor> AccentColors { get; private set; }
         public IList<int> AvailableAccentColors { get; private set; }
@@ -2397,7 +2403,7 @@ namespace Telegram.Services
                 }
                 else if (supergroup.Status is ChatMemberStatusCreator or ChatMemberStatusAdministrator)
                 {
-                    return new ChatPermissions(true, true, true, true, true, true, true, true, true, true, true, true, true, true, true);
+                    return new ChatPermissions(true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true);
                 }
             }
             else if (TryGetBasicGroup(chat, out var basicGroup))
@@ -2409,7 +2415,7 @@ namespace Telegram.Services
                 }
                 else if (basicGroup.Status is ChatMemberStatusCreator or ChatMemberStatusAdministrator)
                 {
-                    return new ChatPermissions(true, true, true, true, true, true, true, true, true, true, true, true, true, true, true);
+                    return new ChatPermissions(true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true);
                 }
             }
 

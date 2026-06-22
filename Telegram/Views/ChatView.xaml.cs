@@ -72,6 +72,11 @@ namespace Telegram.Views
         void CompleteBannerAnimation();
     }
 
+    public interface IProfileChatPage : IChatPage
+    {
+        double HeaderHeight { get; set; }
+    }
+
     public sealed partial class ChatView : UserControlEx, INavigablePage, ISearchablePage, IDialogDelegate, IAutomationNameProvider
     {
         private DialogViewModel _viewModel;
@@ -778,7 +783,7 @@ namespace Telegram.Views
                 }
 
                 var batch = BootStrapper.Current.Compositor.CreateScopedBatch(CompositionBatchTypes.Animation);
-                var diff = owner.ActualSize.Y;
+                var diff = owner.ContentTemplateRoot.ActualSize.Y;
 
                 if (animateSendout)
                 {
@@ -1323,7 +1328,7 @@ namespace Telegram.Views
             {
                 foreach (var popup in VisualTreeHelper.GetOpenPopupsForXamlRoot(XamlRoot))
                 {
-                    if (popup.Child is not ToolTip and not Grid { Name: "TeachingTipRootGrid" } and not Grid { Children.Count: 0 })
+                    if (popup.Child is not ToolTip and not Grid { Name: "TeachingTipRootGrid" or "ReactionAnimation" } and not Grid { Children.Count: 0 })
                     {
                         return;
                     }
@@ -1991,6 +1996,7 @@ namespace Telegram.Views
 
             if (header == null || header.Editing == null || (header.IsEmpty && header.LinkPreviewDisabled))
             {
+                var audioRights = !ViewModel.VerifyRights(chat, x => x.CanSendAudios);
                 var messageRights = !ViewModel.VerifyRights(chat, x => x.CanSendBasicMessages);
                 var pollRights = !ViewModel.VerifyRights(chat, x => x.CanSendPolls);
 
@@ -2011,6 +2017,11 @@ namespace Telegram.Views
                 if (documentRights)
                 {
                     flyout.CreateFlyoutItem(ViewModel.SendDocument, Strings.ChatDocument, Icons.Document);
+                }
+
+                if (audioRights)
+                {
+                    flyout.CreateFlyoutItem(ViewModel.SendAudio, Strings.AttachMusic, Icons.MusicNote2);
                 }
 
                 if (messageRights)
@@ -3213,9 +3224,9 @@ namespace Telegram.Views
                     flyout.CreateFlyoutItem(ViewModel.PinMessage, message, message.IsPinned ? Strings.UnpinMessage : Strings.PinMessage, message.IsPinned ? Icons.PinOff : Icons.Pin);
                 }
 
-                if (ViewModel.Type == DialogType.Pinned)
+                if (ViewModel.Type == DialogType.Pinned || ViewModel.IsSavedPollsTab)
                 {
-                    flyout.CreateFlyoutItem(ViewModel.ViewMessageInChat, message, Strings.ViewInChat, Icons.ChatEmpty);
+                    flyout.CreateFlyoutItem(ViewModel.ViewMessageInChat, message, Strings.ShowInChat2, Icons.ChatEmpty);
                 }
 
                 if (MessageStatistics_Loaded(message, properties))
@@ -3248,6 +3259,13 @@ namespace Telegram.Views
                 if (properties.CanAddTasks)
                 {
                     flyout.CreateFlyoutItem(ViewModel.AddChecklistTask, message, Strings.AddTasks, Icons.AddCircle);
+                }
+
+                if (SettingsService.Current.Diagnostics.RichMessagesDebug && message.Content is MessageRichMessage richMessage)
+                {
+                    flyout.CreateFlyoutItem(() => {
+                        ViewModel.ShowPopup(new TextEditorRichPopup(ViewModel.ClientService, ViewModel.NavigationService, richMessage.Message));
+                        }, "Test");
                 }
 
                 if (checklistTask != null)
@@ -3743,7 +3761,17 @@ namespace Telegram.Views
 
                     if (e.ClickedItem is AddedReaction addedReaction)
                     {
-                        ViewModel.NavigationService.NavigateToSender(addedReaction.SenderId, state: new NavigationState { { "report_reactions", new ReportMessageReactions(message.ChatId, message.Id, addedReaction.SenderId) } });
+                        var state = new NavigationState();
+                        if (properties.CanReportReactions)
+                        {
+                            state.Add("report_reactions", new ReportMessageReactions(message.ChatId, message.Id, addedReaction.SenderId));
+                        }
+                        if (properties.CanDeleteReactions)
+                        {
+                            state.Add("delete_reactions", new DeleteMessageReactionsFromSender(message.ChatId, message.Id, addedReaction.SenderId));
+                        }
+
+                        ViewModel.NavigationService.NavigateToSender(addedReaction.SenderId, state: state);
                     }
                     else if (e.ClickedItem is MessageViewer messageViewer)
                     {
@@ -5020,7 +5048,10 @@ namespace Telegram.Views
         {
             if (args.ItemContainer == null)
             {
-                args.ItemContainer = new TextGridViewItem();
+                args.ItemContainer = new TextGridViewItem
+                {
+                    HorizontalContentAlignment = HorizontalAlignment.Stretch
+                };
                 args.ItemContainer.Style = sender.ItemContainerStyle;
 
                 _autocompleteZoomer.ElementPrepared(args.ItemContainer);
@@ -5040,8 +5071,39 @@ namespace Telegram.Views
                 args.ItemContainer.CornerRadius = new CornerRadius();
             }
 
+            args.ItemContainer.PointerEntered -= Autocomplete_PointerEntered;
+            args.ItemContainer.PointerExited -= Autocomplete_PointerExited;
+
+            if (args.Item is string)
+            {
+                args.ItemContainer.PointerEntered += Autocomplete_PointerEntered;
+                args.ItemContainer.PointerExited += Autocomplete_PointerExited;
+            }
+
             args.ItemContainer.ContentTemplate = sender.ItemTemplateSelector.SelectTemplate(args.Item, args.ItemContainer);
             args.IsContainerPrepared = true;
+        }
+
+        private void Autocomplete_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is SelectorItem { ContentTemplateRoot: Grid content })
+            {
+                if (content.Children.Count > 1 && content.Children[1] is Button button)
+                {
+                    button.Visibility = Visibility.Visible;
+                }
+            }
+        }
+
+        private void Autocomplete_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is SelectorItem { ContentTemplateRoot: Grid content })
+            {
+                if (content.Children.Count > 1 && content.Children[1] is Button button)
+                {
+                    button.Visibility = Visibility.Collapsed;
+                }
+            }
         }
 
         private void Autocomplete_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
@@ -5116,6 +5178,12 @@ namespace Telegram.Views
 
                 var title = content.Children[0] as TextBlock;
                 title.Text = hashtag;
+
+                var clear = content.Children[1] as Button;
+                clear.Click -= RemoveHashtag_Click;
+                clear.Click += RemoveHashtag_Click;
+                clear.Tag = hashtag;
+                clear.Visibility = Visibility.Collapsed;
             }
             else if (args.Item is Sticker sticker)
             {
@@ -5132,6 +5200,21 @@ namespace Telegram.Views
             }
 
             args.Handled = true;
+        }
+
+        private async void RemoveHashtag_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button { Tag: string hashtag })
+            {
+                _viewModel.ClientService.Send(new RemoveRecentHashtag(hashtag));
+
+                await Task.Yield();
+
+                if (ListAutocomplete.ItemsSource is AutocompleteCollection collection)
+                {
+                    collection.Remove(hashtag);
+                }
+            }
         }
 
         private bool? _replyEnabled = null;
@@ -6369,7 +6452,8 @@ namespace Telegram.Views
             ComposerHeaderReference.CornerRadius = new CornerRadius(4, min, 4, 4);
 
             ComposerHeaderCancel.CornerRadius =
-                ButtonEditor.CornerRadius = new CornerRadius(4, min, 4, 4);
+                ButtonMaximize.CornerRadius = new CornerRadius(4, min, 4, 4);
+            ButtonEditor.CornerRadius = new CornerRadius(min, 4, 4, 4);
             TextRoot.CornerRadius =
                 ChatFooter.CornerRadius =
                 ChatRecord.CornerRadius =
@@ -6537,7 +6621,7 @@ namespace Telegram.Views
             {
                 ButtonMore.Content = fullInfo.BotInfo.MenuButton.Text;
 
-                ViewModel.BotCommands = null;
+                ViewModel.BotCommands = fullInfo.BotInfo.Commands.Count > 0 ? fullInfo.BotInfo.Commands.Select(x => new UserCommand(user.Id, x)).ToList() : null;
                 ViewModel.HasBotCommands = false;
                 ShowHideSideButton(SideButton.BotMenu);
             }
@@ -8101,12 +8185,22 @@ namespace Telegram.Views
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
-            Logger.Info(e.NewSize.Height);
+            if (SettingsService.Current.Diagnostics.RichMessagesDebug)
+            {
+                ButtonMaximize.Visibility = e.NewSize.Height >= 84
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            }
         }
 
         private void ButtonEditor_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.OpenTextEditor();
+        }
+
+        private void ButtonMaximize_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.OpenRichTextEditor();
         }
     }
 

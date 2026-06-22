@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using Telegram.Common;
 using Telegram.Controls.Media;
 using Telegram.Converters;
+using Telegram.Services;
 using Telegram.Td;
 using Telegram.Td.Api;
 using Telegram.ViewModels;
@@ -54,7 +55,7 @@ namespace Telegram.Controls.Messages
             if (embedded.SuggestedPostInfo != null)
             {
                 Message = null;
-                GetSuggestedPostInfoTemplate(embedded.SuggestedPostInfo.Price, embedded.SuggestedPostInfo.SendDate);
+                GetSuggestedPostInfoTemplate(embedded.ClientService, embedded.SuggestedPostInfo.Price, embedded.SuggestedPostInfo.SendDate);
             }
             else if (embedded.LinkPreview != null && !embedded.LinkPreviewDisabled)
             {
@@ -77,7 +78,8 @@ namespace Telegram.Controls.Messages
                     message = embedded.LinkPreview.Url;
                 }
 
-                SetText(null,
+                SetText(embedded.ClientService,
+                    null,
                     true,
                     null,
                     embedded.LinkPreview.SiteName,
@@ -98,41 +100,41 @@ namespace Telegram.Controls.Messages
 
         #endregion
 
-        private void GetSuggestedPostInfoTemplate(SuggestedPostPrice price, int sendDate)
+        private void GetSuggestedPostInfoTemplate(IClientService clientService, SuggestedPostPrice price, int sendDate)
         {
             // 1F4C6	
             if (price == null && sendDate == 0)
             {
-                SetText(null, false, null, Strings.SuggestAPostBelow, null, Strings.SuggestAPostBelowSubtitle.AsFormattedText());
+                SetText(clientService, null, false, null, Strings.SuggestAPostBelow, null, Strings.SuggestAPostBelowSubtitle.AsFormattedText());
             }
             else if (sendDate == 0)
             {
                 if (price is SuggestedPostPriceStar priceStar)
                 {
-                    SetText(null, false, null, Strings.SuggestAPostBelow, null, string.Format(Strings.SuggestAPostBelowSubtitleStars.ReplaceStar(Icons.Premium), priceStar.StarCount).AsFormattedText());
+                    SetText(clientService, null, false, null, Strings.SuggestAPostBelow, null, string.Format(Strings.SuggestAPostBelowSubtitleStars.ReplaceStar(Icons.Premium), priceStar.StarCount).AsFormattedText());
                 }
                 else if (price is SuggestedPostPriceTon priceTon)
                 {
-                    SetText(null, false, null, Strings.SuggestAPostBelow, null, string.Format(Strings.SuggestAPostBelowSubtitleStars.ReplaceStar(Icons.Ton), priceTon.ToncoinCentCount / 100d).AsFormattedText());
+                    SetText(clientService, null, false, null, Strings.SuggestAPostBelow, null, string.Format(Strings.SuggestAPostBelowSubtitleStars.ReplaceStar(Icons.Ton), priceTon.ToncoinCentCount / 100d).AsFormattedText());
                 }
             }
             else if (price is SuggestedPostPriceStar priceStar)
             {
-                SetText(null, false, null, Strings.SuggestAPostBelow, null, string.Format(Strings.SuggestAPostBelowSubtitleStarsAndTime.ReplaceStar(Icons.Premium), priceStar.StarCount, string.Format("\U0001F4C6 {0}", Formatter.DateAt(sendDate))).AsFormattedText());
+                SetText(clientService, null, false, null, Strings.SuggestAPostBelow, null, string.Format(Strings.SuggestAPostBelowSubtitleStarsAndTime.ReplaceStar(Icons.Premium), priceStar.StarCount, string.Format("\U0001F4C6 {0}", Formatter.DateAt(sendDate))).AsFormattedText());
             }
             else if (price is SuggestedPostPriceTon priceTon)
             {
-                SetText(null, false, null, Strings.SuggestAPostBelow, null, string.Format(Strings.SuggestAPostBelowSubtitleStarsAndTime.ReplaceStar(Icons.Ton), priceTon.ToncoinCentCount / 100d, string.Format("\U0001F4C6 {0}", Formatter.DateAt(sendDate))).AsFormattedText());
+                SetText(clientService, null, false, null, Strings.SuggestAPostBelow, null, string.Format(Strings.SuggestAPostBelowSubtitleStarsAndTime.ReplaceStar(Icons.Ton), priceTon.ToncoinCentCount / 100d, string.Format("\U0001F4C6 {0}", Formatter.DateAt(sendDate))).AsFormattedText());
             }
             else
             {
-                SetText(null, false, null, Strings.SuggestAPostBelow, null, string.Format(Strings.SuggestAPostBelowSubtitleStarsAndTime.ReplaceStar(Icons.Premium), 0, string.Format("\U0001F4C6 {0}", Formatter.DateAt(sendDate))).AsFormattedText());
+                SetText(clientService, null, false, null, Strings.SuggestAPostBelow, null, string.Format(Strings.SuggestAPostBelowSubtitleStarsAndTime.ReplaceStar(Icons.Premium), 0, string.Format("\U0001F4C6 {0}", Formatter.DateAt(sendDate))).AsFormattedText());
             }
         }
 
         public void Mockup(string sender, string message)
         {
-            SetText(null, true, null, sender, string.Empty, message.AsFormattedText());
+            SetText(null, null, true, null, sender, string.Empty, message.AsFormattedText());
         }
 
         public void UpdateMessageReply(MessageViewModel message)
@@ -386,6 +388,9 @@ namespace Telegram.Controls.Messages
                 case MessagePaidMedia paidMedia:
                     SetPaidMediaTemplate(message, sender, paidMedia, title, outgoing, white);
                     break;
+                case MessageLiveLocation liveLocation:
+                    SetLiveLocationTemplate(message, sender, liveLocation, title, outgoing, white);
+                    break;
                 case MessageLocation location:
                     SetLocationTemplate(message, sender, location, title, outgoing, white);
                     break;
@@ -472,6 +477,9 @@ namespace Telegram.Controls.Messages
                 case MessagePaidMedia paidMedia:
                     SetPaidMediaTemplate(message, sender, paidMedia, title, outgoing, white);
                     break;
+                case MessageLiveLocation liveLocation:
+                    SetLiveLocationTemplate(message, sender, liveLocation, title, outgoing, white);
+                    break;
                 case MessageLocation location:
                     SetLocationTemplate(message, sender, location, title, outgoing, white);
                     break;
@@ -512,7 +520,8 @@ namespace Telegram.Controls.Messages
         {
             HideThumbnail();
 
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -524,7 +533,8 @@ namespace Telegram.Controls.Messages
 
         private void GetStoryTemplate(MessageViewModel message, Story story, string title, bool outgoing, bool white)
         {
-            SetText(null,
+            SetText(message.ClientService,
+                null,
                 outgoing,
                 new MessageSenderChat(story.PosterChatId),
                 GetFromLabel(message, story, title),
@@ -552,7 +562,8 @@ namespace Telegram.Controls.Messages
         {
             HideThumbnail();
 
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -566,7 +577,8 @@ namespace Telegram.Controls.Messages
         {
             HideThumbnail();
 
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -580,7 +592,8 @@ namespace Telegram.Controls.Messages
         {
             HideThumbnail();
 
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -592,7 +605,8 @@ namespace Telegram.Controls.Messages
 
         private void SetPhotoTemplate(MessageViewModel message, MessageSender sender, FormattedText quote, bool manual, MessagePhoto photo, string title, bool outgoing, bool white, bool thumbnail)
         {
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -620,7 +634,8 @@ namespace Telegram.Controls.Messages
             var caption = invoice.PaidMediaCaption;
             if (caption != null && !string.IsNullOrEmpty(caption.Text))
             {
-                SetText(message,
+                SetText(message.ClientService,
+                    message,
                     outgoing,
                     sender,
                     title,
@@ -631,7 +646,8 @@ namespace Telegram.Controls.Messages
             }
             else
             {
-                SetText(message,
+                SetText(message.ClientService,
+                    message,
                     outgoing,
                     sender,
                     title,
@@ -649,7 +665,8 @@ namespace Telegram.Controls.Messages
             var caption = paidMedia.Caption;
             if (caption != null && !string.IsNullOrEmpty(caption.Text))
             {
-                SetText(message,
+                SetText(message.ClientService,
+                    message,
                     outgoing,
                     sender,
                     title,
@@ -674,7 +691,8 @@ namespace Telegram.Controls.Messages
                     text = Icons.Premium + "\u2004" + Locale.Declension(Strings.R.Media, paidMedia.Media.Count);
                 }
 
-                SetText(message,
+                SetText(message.ClientService,
+                    message,
                     outgoing,
                     sender,
                     title,
@@ -692,7 +710,8 @@ namespace Telegram.Controls.Messages
             var caption = paidMedia.Caption;
             if (caption != null && !string.IsNullOrEmpty(caption.Text))
             {
-                SetText(message,
+                SetText(message.ClientService,
+                    message,
                     outgoing,
                     sender,
                     title,
@@ -717,7 +736,8 @@ namespace Telegram.Controls.Messages
                     text = Icons.Premium + "\u2004" + Locale.Declension(Strings.R.Media, paidMedia.Media.Count);
                 }
 
-                SetText(message,
+                SetText(message.ClientService,
+                    message,
                     outgoing,
                     sender,
                     title,
@@ -728,15 +748,31 @@ namespace Telegram.Controls.Messages
             }
         }
 
+        private void SetLiveLocationTemplate(MessageViewModel message, MessageSender sender, MessageLiveLocation location, string title, bool outgoing, bool white)
+        {
+            HideThumbnail();
+
+            SetText(message.ClientService,
+                message,
+                outgoing,
+                sender,
+                title,
+                Strings.AttachLiveLocation,
+                null,
+                false,
+                white);
+        }
+
         private void SetLocationTemplate(MessageViewModel message, MessageSender sender, MessageLocation location, string title, bool outgoing, bool white)
         {
             HideThumbnail();
 
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
-                location.LivePeriod > 0 ? Strings.AttachLiveLocation : Strings.AttachLocation,
+                Strings.AttachLocation,
                 null,
                 false,
                 white);
@@ -747,7 +783,8 @@ namespace Telegram.Controls.Messages
             HideThumbnail();
 
             // TODO: formatted text?
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -761,7 +798,8 @@ namespace Telegram.Controls.Messages
         {
             HideThumbnail();
 
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -775,7 +813,8 @@ namespace Telegram.Controls.Messages
         {
             HideThumbnail();
 
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -787,7 +826,8 @@ namespace Telegram.Controls.Messages
 
         private void SetGameTemplate(MessageViewModel message, MessageSender sender, MessageGame game, string title, bool outgoing, bool white)
         {
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -803,7 +843,8 @@ namespace Telegram.Controls.Messages
         {
             HideThumbnail();
 
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -817,7 +858,8 @@ namespace Telegram.Controls.Messages
         {
             HideThumbnail();
 
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -834,7 +876,8 @@ namespace Telegram.Controls.Messages
             var task = string.IsNullOrEmpty(pollOptionId) ? null : poll.Poll.Options.FirstOrDefault(x => x.Id == pollOptionId);
             if (task != null)
             {
-                SetText(message,
+                SetText(message.ClientService,
+                    message,
                     outgoing,
                     sender,
                     title,
@@ -845,14 +888,15 @@ namespace Telegram.Controls.Messages
             }
             else
             {
-                SetText(message,
-                outgoing,
-                sender,
-                title,
-                $"\uD83D\uDCCA",
-                poll.Poll.Question,
-                false,
-                white);
+                SetText(message.ClientService,
+                    message,
+                    outgoing,
+                    sender,
+                    title,
+                    $"\uD83D\uDCCA",
+                    poll.Poll.Question,
+                    false,
+                    white);
             }
         }
 
@@ -863,7 +907,8 @@ namespace Telegram.Controls.Messages
             var task = checklistTaskId > 0 ? checklist.List.Tasks.FirstOrDefault(x => x.Id == checklistTaskId) : null;
             if (task != null)
             {
-                SetText(message,
+                SetText(message.ClientService,
+                    message,
                     outgoing,
                     sender,
                     title,
@@ -874,7 +919,8 @@ namespace Telegram.Controls.Messages
             }
             else
             {
-                SetText(message,
+                SetText(message.ClientService,
+                    message,
                     outgoing,
                     sender,
                     title,
@@ -889,7 +935,8 @@ namespace Telegram.Controls.Messages
         {
             HideThumbnail();
 
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -903,7 +950,8 @@ namespace Telegram.Controls.Messages
         {
             HideThumbnail();
 
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -917,7 +965,8 @@ namespace Telegram.Controls.Messages
         {
             HideThumbnail();
 
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -929,7 +978,8 @@ namespace Telegram.Controls.Messages
 
         private void SetVideoTemplate(MessageViewModel message, MessageSender sender, FormattedText quote, bool manual, MessageVideo video, string title, bool outgoing, bool white, bool thumbnail)
         {
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -957,7 +1007,8 @@ namespace Telegram.Controls.Messages
 
         private void SetVideoNoteTemplate(MessageViewModel message, MessageSender sender, MessageVideoNote videoNote, string title, bool outgoing, bool white)
         {
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -971,7 +1022,8 @@ namespace Telegram.Controls.Messages
 
         private void SetAnimatedEmojiTemplate(MessageViewModel message, MessageSender sender, MessageAnimatedEmoji animatedEmoji, string title, bool outgoing, bool white)
         {
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -985,7 +1037,8 @@ namespace Telegram.Controls.Messages
 
         private void SetAnimationTemplate(MessageViewModel message, MessageSender sender, FormattedText quote, bool manual, MessageAnimation animation, string title, bool outgoing, bool white)
         {
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -1001,7 +1054,8 @@ namespace Telegram.Controls.Messages
         {
             HideThumbnail();
 
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -1015,7 +1069,8 @@ namespace Telegram.Controls.Messages
         {
             HideThumbnail();
 
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -1029,7 +1084,8 @@ namespace Telegram.Controls.Messages
         {
             HideThumbnail();
 
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 sender,
                 title,
@@ -1043,7 +1099,8 @@ namespace Telegram.Controls.Messages
         {
             HideThumbnail();
 
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 message.SenderId,
                 title,
@@ -1057,7 +1114,8 @@ namespace Telegram.Controls.Messages
         {
             HideThumbnail();
 
-            SetText(null,
+            SetText(message?.ClientService,
+                null,
                 outgoing,
                 sender,
                 title,
@@ -1075,7 +1133,8 @@ namespace Telegram.Controls.Messages
             {
                 if (message.ClientService.TryGetChat(replyToStory.StoryPosterChatId, out Chat chat))
                 {
-                    SetText(null,
+                    SetText(message.ClientService,
+                        null,
                         true,
                         null,
                         chat.Title,
@@ -1086,7 +1145,8 @@ namespace Telegram.Controls.Messages
                 }
                 else
                 {
-                    SetText(null,
+                    SetText(message.ClientService,
+                        null,
                         true,
                         null,
                         null,
@@ -1098,7 +1158,8 @@ namespace Telegram.Controls.Messages
             }
             else
             {
-                SetText(null,
+                SetText(message.ClientService,
+                    null,
                     true,
                     null,
                     null,
@@ -1113,7 +1174,8 @@ namespace Telegram.Controls.Messages
         {
             HideThumbnail();
 
-            SetText(message,
+            SetText(message.ClientService,
+                message,
                 outgoing,
                 message.SenderId,
                 title,
@@ -1130,7 +1192,7 @@ namespace Telegram.Controls.Messages
         protected abstract ImageBrush ShowThumbnail(CornerRadius radius = default);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected abstract void SetText(MessageViewModel message, bool outgoing, MessageSender sender, string title, string service, FormattedText quote, bool manual = false, bool white = false);
+        protected abstract void SetText(IClientService clientService, MessageViewModel message, bool outgoing, MessageSender sender, string title, string service, FormattedText quote, bool manual = false, bool white = false);
 
         #endregion
 

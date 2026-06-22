@@ -130,7 +130,7 @@ namespace Telegram.ViewModels
             }
 
             var reply = GetReply(true);
-            var input = new InputMessageAnimation(new InputFileId(animation.AnimationValue.Id), animation.Thumbnail?.ToInput(), Array.Empty<int>(), animation.Duration, animation.Width, animation.Height, null, false, false);
+            var input = new InputMessageAnimation(new InputAnimation(new InputFileId(animation.AnimationValue.Id), animation.Thumbnail?.ToInput(), Array.Empty<int>(), animation.Duration, animation.Width, animation.Height), null, false, false);
 
             await SendMessageAsync(reply, input, options);
         }
@@ -330,6 +330,95 @@ namespace Telegram.ViewModels
                 }
             }
             catch { }
+        }
+
+        public async void SendAudio()
+        {
+            var restricted = await VerifyRightsAsync(x => x.CanSendAudios,
+                Strings.ErrorSendRestrictedMusicAll,
+                Strings.ErrorSendRestrictedMusic,
+                Strings.ErrorSendRestrictedMusic);
+            if (restricted)
+            {
+                return;
+            }
+
+            var popup = new SendAudiosPopup(ClientService, NavigationService);
+
+            var confirm = await ShowPopupAsync(popup);
+            if (confirm != ContentDialogResult.Primary)
+            {
+                return;
+            }
+
+            if (popup.SelectedItems?.Count > 0)
+            {
+                var options = await PickMessageSendOptionsAsync();
+                if (options == null)
+                {
+                    return;
+                }
+
+                var reply = GetReply(true);
+                var chat = Chat;
+
+                if (popup.SelectedItems.Count > 1)
+                {
+                    var operations = new List<InputMessageContent>();
+                    var groups = new List<List<InputMessageContent>>();
+
+                    foreach (var selected in popup.SelectedItems)
+                    {
+                        operations.Add(selected.ToInputMessage());
+
+                        if (operations.Count > 9)
+                        {
+                            groups.Add(operations);
+                            operations = new();
+                        }
+                    }
+
+                    groups.Add(operations);
+
+                    foreach (var content in groups)
+                    {
+                        var function = CreateSendMessageAlbum(chat.Id, OutgoingTopicId, reply, options, content);
+                        if (function == null)
+                        {
+                            return;
+                        }
+
+                        await SendMessageAsync(function);
+                    }
+                }
+                else
+                {
+                    var function = CreateSendMessage(chat.Id, OutgoingTopicId, reply, options, popup.SelectedItems[0].ToInputMessage());
+                    if (function == null)
+                    {
+                        return;
+                    }
+
+                    await SendMessageAsync(function);
+                }
+            }
+            else
+            {
+                try
+                {
+                    var picker = new FileOpenPicker();
+                    picker.ViewMode = PickerViewMode.Thumbnail;
+                    picker.SuggestedStartLocation = PickerLocationId.MusicLibrary;
+                    picker.FileTypeFilter.Add("*");
+
+                    var files = await picker.PickMultipleFilesAsync();
+                    if (files != null && files.Count > 0)
+                    {
+                        SendFileExecute(files, media: false);
+                    }
+                }
+                catch { }
+            }
         }
 
         public async void SendFileExecute(IReadOnlyList<StorageFile> files, FormattedText caption = null, bool media = true)
@@ -807,12 +896,12 @@ namespace Telegram.ViewModels
             await SendPollAsync(true, false, false, Chat?.Type is ChatTypeSupergroup super && super.IsChannel);
         }
 
-        protected async Task SendPollAsync(bool useTextAsQuestion, bool forceQuiz, bool forceRegular, bool forceAnonymous)
+        protected async Task SendPollAsync(bool useTextAsQuestion, bool forceQuiz, bool forceRegular, bool channel)
         {
             var title = GetFormattedText(true, false);
             title = title.Substring(0, ClientService.Options.ChecklistTitleLengthMax);
 
-            var popup = new CreatePollPopup(ClientService, title, forceQuiz, forceRegular, forceAnonymous);
+            var popup = new CreatePollPopup(ClientService, NavigationService, title, forceQuiz, forceRegular, channel);
 
             var confirm = await ShowPopupAsync(popup);
             if (confirm != ContentDialogResult.Primary)
@@ -828,7 +917,7 @@ namespace Telegram.ViewModels
             }
 
             var reply = GetReply(true);
-            var input = new InputMessagePoll(popup.Question, popup.Options, null, popup.IsAnonymous, false, false, false, false, popup.Type, 0, 0);
+            var input = popup.Input;
 
             await SendMessageAsync(reply, input, options);
         }

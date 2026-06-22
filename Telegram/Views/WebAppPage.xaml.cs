@@ -55,7 +55,7 @@ namespace Telegram.Views
         private WebAppStorage _deviceStorage;
         private WebAppStorage _secureStorage;
 
-        private readonly Chat _sourceChat;
+        private readonly OpenUrlSource _source;
         private readonly User _botUser;
         private readonly AttachmentMenuBot _menuBot;
 
@@ -80,7 +80,7 @@ namespace Telegram.Views
         private ShapeVisual _placeholderVisual;
 
         // TODO: constructor should take a function and URL should be loaded asynchronously
-        public WebAppPage(IClientService clientService, INavigationService navigationService, User botUser, string url, long launchId = 0, AttachmentMenuBot menuBot = null, Chat sourceChat = null, InternalLinkType sourceLink = null, string buttonText = null)
+        public WebAppPage(IClientService clientService, INavigationService navigationService, User botUser, WebAppUrl url, long launchId = 0, AttachmentMenuBot menuBot = null, OpenUrlSource source = null, InternalLinkType sourceLink = null, string buttonText = null)
         {
             InitializeComponent();
 
@@ -89,19 +89,20 @@ namespace Telegram.Views
             _aggregator = clientService.Session.Resolve<IEventAggregator>();
 
             _aggregator.Subscribe<UpdateWebAppMessageSent>(this, Handle)
-                .Subscribe<UpdatePaymentCompleted>(Handle);
+                .Subscribe<UpdatePaymentCompleted>(Handle)
+                .Subscribe<UpdateChatJoinResult>(Handle);
 
             _botUser = botUser;
             _launchId = launchId;
             _menuBot = menuBot;
-            _sourceChat = sourceChat;
+            _source = source;
             _sourceLink = sourceLink != null ? new InternalLinkTypeMainWebApp(botUser.ActiveUsername(), string.Empty, new WebAppOpenModeFullSize()) : null;
             _buttonText = buttonText;
 
             TitleText.Text = botUser.FullName();
             Photo.Source = ProfilePictureSource.User(clientService, botUser);
 
-            View.Navigate(url);
+            View.Navigate(url.Url);
 
             var panel = ElementComposition.GetElementVisual(BottomBarPanel);
             panel.Clip = panel.Compositor.CreateInsetClip(0, 96, 0, 0);
@@ -234,6 +235,15 @@ namespace Telegram.Views
         private void Handle(UpdatePaymentCompleted update)
         {
             PostEvent("invoice_closed", "slug", update.Slug, "status", update.Status);
+        }
+
+        private void Handle(UpdateChatJoinResult update)
+        {
+            if (_source is OpenUrlSourceJoinChatRequest joinChatRequest && joinChatRequest.QueryId == update.QueryId && joinChatRequest.ChatId == update.ChatId)
+            {
+                _closeNeedConfirmation = false;
+                this.BeginOnUIThread(Close);
+            }
         }
 
         private bool _closed;
@@ -1467,9 +1477,17 @@ namespace Telegram.Views
             var text = eventData.GetNamedString("text", string.Empty); // text on the button(trim(text) should be non-empty, if empty, the button can be hidden);
             var color = eventData.GetNamedString("color", string.Empty); // background color of the button(by default button_colorfrom the theme);
             var text_color = eventData.GetNamedString("text_color", string.Empty); // text color on the button(by default button_text_colorfrom the theme).
-            var icon_custom_emoji_id = eventData.GetNamedString("icon_custom_emoji_id", string.Empty);
 
-            var hasIcon = long.TryParse(icon_custom_emoji_id, out long customEmojiId);
+            bool hasIcon = false;
+            long customEmojiId = 0;
+            if (eventData.TryGetValue("icon_custom_emoji_id", out IJsonValue icon_custom_emoji_id))
+            {
+                if (icon_custom_emoji_id.ValueType == JsonValueType.String)
+                {
+                    hasIcon = long.TryParse(icon_custom_emoji_id.GetString(), out customEmojiId);
+                }
+            }
+
             var hasText = !string.IsNullOrEmpty(text.Trim());
 
             if (is_visible && (hasIcon || hasText))
@@ -1983,9 +2001,9 @@ namespace Telegram.Views
                     return;
                 }
             }
-            else if (_sourceChat != null)
+            else if (_source is OpenUrlSourceChat openUrlSourceChat)
             {
-                _aggregator.Publish(new UpdateChatSwitchInlineQuery(_sourceChat.Id, _botUser.Id, query));
+                _aggregator.Publish(new UpdateChatSwitchInlineQuery(openUrlSourceChat.ChatId, _botUser.Id, query));
             }
 
             _closeNeedConfirmation = false;
@@ -2028,9 +2046,16 @@ namespace Telegram.Views
 
                         static Windows.Data.Json.JsonValue CreateStringValue(string stringValue)
                         {
-                            if (Windows.Data.Json.JsonValue.TryParse(stringValue, out Windows.Data.Json.JsonValue obj))
+                            try
                             {
-                                return obj;
+                                if (Windows.Data.Json.JsonValue.TryParse(stringValue, out Windows.Data.Json.JsonValue obj))
+                                {
+                                    return obj;
+                                }
+                            }
+                            catch
+                            {
+                                Logger.Debug("Unable to parse JSON string: " + stringValue);
                             }
 
                             return Windows.Data.Json.JsonValue.CreateStringValue(stringValue);

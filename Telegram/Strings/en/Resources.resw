@@ -619,6 +619,9 @@
   <data name="ActionLeftUser" xml:space="preserve">
     <value>un1 left the group</value>
   </data>
+  <data name="ActionManagedBotCreated" xml:space="preserve">
+    <value>You created un1 bot for un2 to manage</value>
+  </data>
   <data name="ActionMigrateFromGroup" xml:space="preserve">
     <value>This group was upgraded to a supergroup</value>
   </data>
@@ -1189,11 +1192,35 @@ This is a one-time process using your phone&apos;s camera. Your selfie will not 
   <data name="AIEditor" xml:space="preserve">
     <value>AI Editor</value>
   </data>
+  <data name="AIEditorAddStyle" xml:space="preserve">
+    <value>Add Style</value>
+  </data>
+  <data name="AIEditorAfter" xml:space="preserve">
+    <value>After</value>
+  </data>
+  <data name="AIEditorAnotherExample" xml:space="preserve">
+    <value>Another Example</value>
+  </data>
   <data name="AIEditorApply" xml:space="preserve">
     <value>Apply</value>
   </data>
+  <data name="AIEditorBefore" xml:space="preserve">
+    <value>Before</value>
+  </data>
   <data name="AIEditorChooseStyle" xml:space="preserve">
     <value>Choose a style</value>
+  </data>
+  <data name="AIEditorCreatedBy" xml:space="preserve">
+    <value>Created by **{0}**.</value>
+  </data>
+  <data name="AIEditorDeleteStyle" xml:space="preserve">
+    <value>Delete Style</value>
+  </data>
+  <data name="AIEditorDeleteStyleText" xml:space="preserve">
+    <value>Are you sure you want to delete this style? It will be removed for everyone who installed it.</value>
+  </data>
+  <data name="AIEditorEditStyle" xml:space="preserve">
+    <value>Edit Style</value>
   </data>
   <data name="AIEditorEmojify" xml:space="preserve">
     <value>emojify</value>
@@ -1216,14 +1243,51 @@ This is a one-time process using your phone&apos;s camera. Your selfie will not 
   <data name="AIEditorLimitTitle" xml:space="preserve">
     <value>Daily Limit Reached</value>
   </data>
+  <data name="AIEditorNewStyle" xml:space="preserve">
+    <value>New Style</value>
+  </data>
   <data name="AIEditorOriginal" xml:space="preserve">
     <value>Original</value>
   </data>
   <data name="AIEditorOriginalText" xml:space="preserve">
     <value>Original Text</value>
   </data>
+  <data name="AIEditorRemoveStyle" xml:space="preserve">
+    <value>Remove Style</value>
+  </data>
   <data name="AIEditorResult" xml:space="preserve">
     <value>Result</value>
+  </data>
+  <data name="AIEditorShareStyle" xml:space="preserve">
+    <value>Share Style</value>
+  </data>
+  <data name="AIEditorStyleAddLink" xml:space="preserve">
+    <value>Add a link to my account</value>
+  </data>
+  <data name="AIEditorStyleCreate" xml:space="preserve">
+    <value>Create</value>
+  </data>
+  <data name="AIEditorStyleDone" xml:space="preserve">
+    <value>Done</value>
+  </data>
+  <data name="AIEditorStyleEdit" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="AIEditorStylePrompt" xml:space="preserve">
+    <value>Instructions</value>
+  </data>
+  <data name="AIEditorStylePromptHint" xml:space="preserve">
+    <value>for example, &quot;Write like a swashbuckling pirate. Use arr, ye, matey, and talk about treasure and the sea&quot;</value>
+  </data>
+  <data name="AIEditorStyleText" xml:space="preserve">
+    <value>Add this style to instantly
+rewrite your messages.</value>
+  </data>
+  <data name="AIEditorStyleTitle" xml:space="preserve">
+    <value>Style Name</value>
+  </data>
+  <data name="AIEditorStyleTitleHint" xml:space="preserve">
+    <value>for example: &quot;Pirate&quot;</value>
   </data>
   <data name="AIEditorTabFix" xml:space="preserve">
     <value>Fix</value>
@@ -1242,6 +1306,12 @@ This is a one-time process using your phone&apos;s camera. Your selfie will not 
   </data>
   <data name="AIEditorToOther" xml:space="preserve">
     <value>To {0}</value>
+  </data>
+  <data name="AIEditorUsedBy_one" xml:space="preserve">
+    <value>Used by {0} person.</value>
+  </data>
+  <data name="AIEditorUsedBy_other" xml:space="preserve">
+    <value>Used by {0} people.</value>
   </data>
   <data name="Album" xml:space="preserve">
     <value>Album</value>
@@ -1345,11 +1415,44 @@ This is a one-time process using your phone&apos;s camera. Your selfie will not 
   <data name="ApproveNewMembers" xml:space="preserve">
     <value>Request Admin Approval</value>
   </data>
+  <data name="ApproveNewMembersApplyToLinksApply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="ApproveNewMembersApplyToLinksDontApply" xml:space="preserve">
+    <value>Don&apos;t Apply</value>
+  </data>
+  <data name="ApproveNewMembersApplyToLinksTitle" xml:space="preserve">
+    <value>Apply to existing invite links</value>
+  </data>
   <data name="ApproveNewMembersDescription" xml:space="preserve">
     <value>Turn this on if you want users to join only after they are approved by an admin.</value>
   </data>
   <data name="ApproveNewMembersDescriptionFrozen" xml:space="preserve">
     <value>You can&apos;t enable admin approval for links that require a monthly fee.</value>
+  </data>
+  <data name="ApproveNewMembersDisableForLinks_one" xml:space="preserve">
+    <value>Also disable **Approve New Members** for **{0} existing invite link** in this group?</value>
+  </data>
+  <data name="ApproveNewMembersDisableForLinks_other" xml:space="preserve">
+    <value>Also disable **Approve New Members** for **{0} existing invite links** in this group?</value>
+  </data>
+  <data name="ApproveNewMembersDisableForLinksChannel_one" xml:space="preserve">
+    <value>Also disable **Approve New Members** for **{0} existing invite link** in this channel?</value>
+  </data>
+  <data name="ApproveNewMembersDisableForLinksChannel_other" xml:space="preserve">
+    <value>Also disable **Approve New Members** for **{0} existing invite links** in this channel?</value>
+  </data>
+  <data name="ApproveNewMembersEnableForLinks_one" xml:space="preserve">
+    <value>Also enable **Approve New Members** for **{0} existing invite link** in this group?</value>
+  </data>
+  <data name="ApproveNewMembersEnableForLinks_other" xml:space="preserve">
+    <value>Also enable **Approve New Members** for **{0} existing invite links** in this group?</value>
+  </data>
+  <data name="ApproveNewMembersEnableForLinksChannel_one" xml:space="preserve">
+    <value>Also enable **Approve New Members** for **{0} existing invite link** in this channel?</value>
+  </data>
+  <data name="ApproveNewMembersEnableForLinksChannel_other" xml:space="preserve">
+    <value>Also enable **Approve New Members** for **{0} existing invite links** in this channel?</value>
   </data>
   <data name="AppsTab" xml:space="preserve">
     <value>Apps</value>
@@ -1680,6 +1783,18 @@ Please take a look at the &lt;a href=&quot;https://telegram.org/faq#general-ques
   </data>
   <data name="AudioSaveToSavedMessagesSaved" xml:space="preserve">
     <value>Audio sent to Saved Messages.</value>
+  </data>
+  <data name="AudioSearchChats" xml:space="preserve">
+    <value>Shared Music</value>
+  </data>
+  <data name="AudioSearchGlobal" xml:space="preserve">
+    <value>Global Search</value>
+  </data>
+  <data name="AudioSearchLocal" xml:space="preserve">
+    <value>Local Music</value>
+  </data>
+  <data name="AudioSearchProfile" xml:space="preserve">
+    <value>Profile Music</value>
   </data>
   <data name="AudioUnknownArtist" xml:space="preserve">
     <value>Unknown artist</value>
@@ -2468,6 +2583,9 @@ from **{0}**.</value>
   </data>
   <data name="BoostingReceivedPrizeFrom" xml:space="preserve">
     <value>You won a prize in a giveaway organized by **{0}**.</value>
+  </data>
+  <data name="BoostingSelectCountry" xml:space="preserve">
+    <value>Select Countries</value>
   </data>
   <data name="BoostingSendLinkToFriends" xml:space="preserve">
     <value>You can also **send this link** to a friend as a gift.</value>
@@ -4190,6 +4308,12 @@ Ask your **Premium** subscribers to boost your channel with this link:</value>
   <data name="ChannelSettingsJoinRequestInfo" xml:space="preserve">
     <value>Turn this on if you want users to join only after they are approved by an admin.</value>
   </data>
+  <data name="ChannelSettingsJoinRequestInfo2" xml:space="preserve">
+    <value>Admin must approve anyone who wants to join the channel.</value>
+  </data>
+  <data name="ChannelSettingsJoinRequestInfoManagedBy" xml:space="preserve">
+    <value>Admin must approve anyone who wants to join the channel. Managed by **{0}**</value>
+  </data>
   <data name="ChannelSettingsJoinTitle" xml:space="preserve">
     <value>Who can send messages?</value>
   </data>
@@ -4884,6 +5008,49 @@ handles AI tasks safely and efficiently.</value>
   <data name="CreateLink" xml:space="preserve">
     <value>Create Link</value>
   </data>
+  <data name="CreateManagedBotButton" xml:space="preserve">
+    <value>Create</value>
+  </data>
+  <data name="CreateManagedBotCreatedText" xml:space="preserve">
+    <value>**{0}** will manage this bot for you.</value>
+  </data>
+  <data name="CreateManagedBotCreatedTitle" xml:space="preserve">
+    <value>{0} created!</value>
+  </data>
+  <data name="CreateManagedBotLimitText" xml:space="preserve">
+    <value>You can create up to {0} bots, or delete your current ones via @BotFather</value>
+  </data>
+  <data name="CreateManagedBotLimitTextPremium" xml:space="preserve">
+    <value>Subscribe to **Premium** to create up to {0} bots, or delete one of your {0} bots via @BotFather</value>
+  </data>
+  <data name="CreateManagedBotLimitTextTime" xml:space="preserve">
+    <value>You can create another bot in {0}.</value>
+  </data>
+  <data name="CreateManagedBotLimitTitle" xml:space="preserve">
+    <value>Bot Limit Exceeded</value>
+  </data>
+  <data name="CreateManagedBotName" xml:space="preserve">
+    <value>Bot Name</value>
+  </data>
+  <data name="CreateManagedBotNameInfo" xml:space="preserve">
+    <value>Tap to edit bot name.</value>
+  </data>
+  <data name="CreateManagedBotText" xml:space="preserve">
+    <value>**{0}** would like you to create
+and manage a chatbot on your behalf.</value>
+  </data>
+  <data name="CreateManagedBotTitle" xml:space="preserve">
+    <value>Create Bot</value>
+  </data>
+  <data name="CreateManagedBotUnsupported" xml:space="preserve">
+    <value>**{0}** doesn’t support Bot Management mode.</value>
+  </data>
+  <data name="CreateManagedBotUsername" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="CreateManagedBotUsernameInfo" xml:space="preserve">
+    <value>Tap to edit bot username.</value>
+  </data>
   <data name="CreateNewContact" xml:space="preserve">
     <value>Create New Contact</value>
   </data>
@@ -5042,6 +5209,9 @@ You can always switch back to the default Telegram theme here.</value>
   <data name="DeleteAdditionalActions" xml:space="preserve">
     <value>Additional actions</value>
   </data>
+  <data name="DeleteAlertReaction" xml:space="preserve">
+    <value>Are you sure you want to delete the reaction from this user?</value>
+  </data>
   <data name="DeleteAll" xml:space="preserve">
     <value>Delete All</value>
   </data>
@@ -5155,6 +5325,12 @@ You can always switch back to the default Telegram theme here.</value>
   </data>
   <data name="DeleteProxyTitle" xml:space="preserve">
     <value>Delete Proxy</value>
+  </data>
+  <data name="DeleteReaction" xml:space="preserve">
+    <value>Delete Reaction</value>
+  </data>
+  <data name="DeleteReactionMenu" xml:space="preserve">
+    <value>Delete Reaction</value>
   </data>
   <data name="DeleteReportSpam" xml:space="preserve">
     <value>Report spam</value>
@@ -5481,6 +5657,9 @@ Anyone from the channel will be able to see messages in this group.</value>
   <data name="Edit" xml:space="preserve">
     <value>Edit</value>
   </data>
+  <data name="EditAccountInfoHeader" xml:space="preserve">
+    <value>Your Info</value>
+  </data>
   <data name="EditAdmin" xml:space="preserve">
     <value>Admin Rights</value>
   </data>
@@ -5540,6 +5719,12 @@ Anyone from the channel will be able to see messages in this group.</value>
   </data>
   <data name="EditAdminPostStories" xml:space="preserve">
     <value>Post Stories</value>
+  </data>
+  <data name="EditAdminProcessJoinRequests" xml:space="preserve">
+    <value>Process Join Requests</value>
+  </data>
+  <data name="EditAdminProcessJoinRequestsInfo" xml:space="preserve">
+    <value>Allow this bot to approve new members using its own interfaces, such as captchas.</value>
   </data>
   <data name="EditAdminPromotedBy" xml:space="preserve">
     <value>Promoted by {0}</value>
@@ -5685,6 +5870,18 @@ If the number above is correct, please wait for the verification code.</value>
   </data>
   <data name="EditProfileChannelTitle" xml:space="preserve">
     <value>Personal channel</value>
+  </data>
+  <data name="EditProfileChatAutomation" xml:space="preserve">
+    <value>Chat Automation</value>
+  </data>
+  <data name="EditProfileChatAutomationInfo" xml:space="preserve">
+    <value>Add a bot to answer messages on your behalf.</value>
+  </data>
+  <data name="EditProfileHours" xml:space="preserve">
+    <value>Change Opening Hours</value>
+  </data>
+  <data name="EditProfileLocation" xml:space="preserve">
+    <value>Change Location</value>
   </data>
   <data name="EditToDo" xml:space="preserve">
     <value>Edit</value>
@@ -6215,6 +6412,9 @@ Learn more at telegram.org</value>
   </data>
   <data name="EventLogRestrictedSendPolls" xml:space="preserve">
     <value>Send polls</value>
+  </data>
+  <data name="EventLogRestrictedSendReactions" xml:space="preserve">
+    <value>Send Reactions</value>
   </data>
   <data name="EventLogRestrictedSendStickers" xml:space="preserve">
     <value>Send stickers &amp; GIFs</value>
@@ -8316,8 +8516,20 @@ Ask your **Premium** members to boost your group with this link:</value>
   <data name="GroupNotRestrictBoostersInfo2" xml:space="preserve">
     <value>Choose how many boosts a user must give to the group to bypass restrictions on sending messages.</value>
   </data>
+  <data name="GroupPrivateSettingsJoinRequestInfo2" xml:space="preserve">
+    <value>Admin must approve anyone who wants to join the group.</value>
+  </data>
+  <data name="GroupPrivateSettingsJoinRequestInfoManagedBy" xml:space="preserve">
+    <value>Admin must approve anyone who wants to join the group. Managed by **{0}**</value>
+  </data>
   <data name="GroupProfileInfo" xml:space="preserve">
     <value>Choose a color and a logo for the group&apos;s profile.</value>
+  </data>
+  <data name="GroupPublicSettingsJoinRequestInfo2" xml:space="preserve">
+    <value>Admin must approve anyone who wants to send a message in the group.</value>
+  </data>
+  <data name="GroupPublicSettingsJoinRequestInfoManagedBy" xml:space="preserve">
+    <value>Admin must approve anyone who wants to send a message in the group. Managed by **{0}**</value>
   </data>
   <data name="Groups_one" xml:space="preserve">
     <value>{0} group</value>
@@ -8383,6 +8595,18 @@ They can still join via an invite link as long as they are not on the Removed Us
   </data>
   <data name="GrowthChartTitle" xml:space="preserve">
     <value>Growth</value>
+  </data>
+  <data name="GuardBotJoinRequestApproved" xml:space="preserve">
+    <value>Your request to join **{0}** has been approved</value>
+  </data>
+  <data name="GuardBotJoinRequestDeclined" xml:space="preserve">
+    <value>Your request to join **{0}** has been declined</value>
+  </data>
+  <data name="GuardBotJoinRequestQueued" xml:space="preserve">
+    <value>Your request to join **{0}** has been sent to the admins</value>
+  </data>
+  <data name="GuestBotFor" xml:space="preserve">
+    <value>for</value>
   </data>
   <data name="Hashtags" xml:space="preserve">
     <value>HASHTAGS</value>
@@ -9292,6 +9516,11 @@ Secret chats and pending messages will be lost.</value>
   </data>
   <data name="ManageChannelMenu" xml:space="preserve">
     <value>Manage channel</value>
+  </data>
+  <data name="ManagedBotChatInfo" xml:space="preserve">
+    <value>**{0}** is ready!
+
+Tap **Start** below to test your new chatbot. Its behavior is defined by **{0}**.</value>
   </data>
   <data name="ManageGroupMenu" xml:space="preserve">
     <value>Manage group</value>
@@ -11093,6 +11322,98 @@ Payments will go directly to the developer of {0}. Telegram cannot provide any g
   <data name="PollSubmitVotesNoCaps" xml:space="preserve">
     <value>Vote</value>
   </data>
+  <data name="PollV2AllowAddingOptions" xml:space="preserve">
+    <value>Allow Adding Options</value>
+  </data>
+  <data name="PollV2AllowAddingOptionsInfo" xml:space="preserve">
+    <value>Participants can suggest new options</value>
+  </data>
+  <data name="PollV2AllowedCountries" xml:space="preserve">
+    <value>Allowed Countries</value>
+  </data>
+  <data name="PollV2AllowedCountriesListManyP_one" xml:space="preserve">
+    <value>{0} country</value>
+  </data>
+  <data name="PollV2AllowedCountriesListManyP_other" xml:space="preserve">
+    <value>{0} countries</value>
+  </data>
+  <data name="PollV2AllowMultipleAnswers" xml:space="preserve">
+    <value>Allow Multiple Answers</value>
+  </data>
+  <data name="PollV2AllowMultipleAnswersInfo" xml:space="preserve">
+    <value>Voters can select more than one option</value>
+  </data>
+  <data name="PollV2AllowRevoting" xml:space="preserve">
+    <value>Allow Revoting</value>
+  </data>
+  <data name="PollV2AllowRevotingInfo" xml:space="preserve">
+    <value>Voters can change their vote</value>
+  </data>
+  <data name="PollV2HideResults" xml:space="preserve">
+    <value>Hide results</value>
+  </data>
+  <data name="PollV2HideResultsInfo" xml:space="preserve">
+    <value>When enabled, results will not be visible until the poll closes.</value>
+  </data>
+  <data name="PollV2LimitByCountry" xml:space="preserve">
+    <value>Limit by Country</value>
+  </data>
+  <data name="PollV2LimitByCountryInfo" xml:space="preserve">
+    <value>Only users from selected
+countries can vote</value>
+  </data>
+  <data name="PollV2LimitDuration" xml:space="preserve">
+    <value>Limit Duration</value>
+  </data>
+  <data name="PollV2LimitDurationInfo" xml:space="preserve">
+    <value>Automatically close the poll at a set time</value>
+  </data>
+  <data name="PollV2PollDuration" xml:space="preserve">
+    <value>Poll duration</value>
+  </data>
+  <data name="PollV2PollDurationOptionCustom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="PollV2PollEnds" xml:space="preserve">
+    <value>Poll ends</value>
+  </data>
+  <data name="PollV2RestrictToSubscribers" xml:space="preserve">
+    <value>Restrict to Subscribers</value>
+  </data>
+  <data name="PollV2RestrictToSubscribersInfo" xml:space="preserve">
+    <value>Only subscribers who joined
+24+ hours ago can vote</value>
+  </data>
+  <data name="PollV2SetCorrectAnswer" xml:space="preserve">
+    <value>Set Correct Answer</value>
+  </data>
+  <data name="PollV2SetCorrectAnswerInfo" xml:space="preserve">
+    <value>Mark one option as the right answer</value>
+  </data>
+  <data name="PollV2ShowWhoVoted" xml:space="preserve">
+    <value>Show Who Voted</value>
+  </data>
+  <data name="PollV2ShowWhoVotedInfo" xml:space="preserve">
+    <value>Display voter name on each option</value>
+  </data>
+  <data name="PollV2ShuffleOptions" xml:space="preserve">
+    <value>Shuffle Options</value>
+  </data>
+  <data name="PollV2ShuffleOptionsInfo" xml:space="preserve">
+    <value>Answers appear in a random order for each voter</value>
+  </data>
+  <data name="PollV2ToastOnlySubscribersCanVote" xml:space="preserve">
+    <value>Only subscribers of **{0}** can vote.</value>
+  </data>
+  <data name="PollV2ToastOnlySubscribersJoined24hCanVote" xml:space="preserve">
+    <value>Only subscribers who joined more than **24 hours** ago can vote.</value>
+  </data>
+  <data name="PollV2ToastOnlyUsersFromCountriesCanVoteOne" xml:space="preserve">
+    <value>Only users from **{0}** can vote.</value>
+  </data>
+  <data name="PollV2ToastOnlyUsersFromCountriesCanVoteOther" xml:space="preserve">
+    <value>Only users from **{0}** and **{1}** can vote.</value>
+  </data>
   <data name="PollViewResults" xml:space="preserve">
     <value>VIEW RESULTS</value>
   </data>
@@ -11882,6 +12203,9 @@ seamlessly and efficiently.</value>
   <data name="ProfileBotAffiliateProgramInfoOwner" xml:space="preserve">
     <value>Share a link to {0} with other users and earn {1} of their spending there.</value>
   </data>
+  <data name="ProfileBotManagedBy" xml:space="preserve">
+    <value>Created and managed by **@{0}**</value>
+  </data>
   <data name="ProfileBotOpenApp" xml:space="preserve">
     <value>Open App</value>
   </data>
@@ -11930,6 +12254,12 @@ seamlessly and efficiently.</value>
   <data name="ProfilePlaylistTitleMine" xml:space="preserve">
     <value>Your Playlist</value>
   </data>
+  <data name="ProfilePollsCount_one" xml:space="preserve">
+    <value>{0} poll</value>
+  </data>
+  <data name="ProfilePollsCount_other" xml:space="preserve">
+    <value>{0} polls</value>
+  </data>
   <data name="ProfileStories" xml:space="preserve">
     <value>Posts</value>
   </data>
@@ -11956,6 +12286,9 @@ seamlessly and efficiently.</value>
   </data>
   <data name="ProfileTabSetAsMain" xml:space="preserve">
     <value>Set as Main Tab</value>
+  </data>
+  <data name="ProfileUnofficialSecurityRisk" xml:space="preserve">
+    <value>{0} uses an unofficial Telegram client — messages to this user may be less secure.</value>
   </data>
   <data name="PromoteUrl" xml:space="preserve">
     <value>https://ads.telegram.org</value>
@@ -12041,6 +12374,9 @@ seamlessly and efficiently.</value>
   <data name="Question" xml:space="preserve">
     <value>Question</value>
   </data>
+  <data name="QuestionDescriptionHint" xml:space="preserve">
+    <value>Add Description (optional)</value>
+  </data>
   <data name="QuestionHint" xml:space="preserve">
     <value>Ask a question</value>
   </data>
@@ -12088,6 +12424,9 @@ seamlessly and efficiently.</value>
   </data>
   <data name="ReactionCreateOwnPack" xml:space="preserve">
     <value>You can also **create your own** emoji packs and use them.</value>
+  </data>
+  <data name="ReactionDeleteSent" xml:space="preserve">
+    <value>Reaction deleted</value>
   </data>
   <data name="ReactionLevelRequiredBtn_one" xml:space="preserve">
     <value>Level {0} Required</value>
@@ -12385,6 +12724,9 @@ seamlessly and efficiently.</value>
   </data>
   <data name="ReportReactionAndBan" xml:space="preserve">
     <value>Ban and Report</value>
+  </data>
+  <data name="ReportReactionAndBan2" xml:space="preserve">
+    <value>Ban and Report Reaction</value>
   </data>
   <data name="ReportSelectedMessages" xml:space="preserve">
     <value>Report Selected</value>
@@ -12877,6 +13219,9 @@ The channel &quot;**{1}**&quot; will become private.</value>
   <data name="SearchAppsPopular" xml:space="preserve">
     <value>Grossing apps</value>
   </data>
+  <data name="SearchCountriesSelect" xml:space="preserve">
+    <value>Select</value>
+  </data>
   <data name="SearchFrom" xml:space="preserve">
     <value>from:</value>
   </data>
@@ -13293,6 +13638,9 @@ The channel &quot;**{1}**&quot; will become private.</value>
   </data>
   <data name="SharedMusicTab2" xml:space="preserve">
     <value>Music</value>
+  </data>
+  <data name="SharedPollTab" xml:space="preserve">
+    <value>Polls</value>
   </data>
   <data name="SharedVoiceTab2" xml:space="preserve">
     <value>Voice</value>
@@ -15930,6 +16278,9 @@ However, it is currently available for purchase. **Learn more…**</value>
   </data>
   <data name="UserRestrictionsSendPolls" xml:space="preserve">
     <value>Send Polls</value>
+  </data>
+  <data name="UserRestrictionsSendReactions" xml:space="preserve">
+    <value>Send Reactions</value>
   </data>
   <data name="UserRestrictionsSendRound" xml:space="preserve">
     <value>Send Video Messages</value>

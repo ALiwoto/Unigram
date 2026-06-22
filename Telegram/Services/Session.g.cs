@@ -443,6 +443,11 @@ namespace Telegram.Services
                         _settingsService,
                         _eventAggregator,
                         _profilePhotoService ??= new Telegram.Services.ProfilePhotoService(_clientService));
+                case "Telegram.ViewModels.Create.NewBotViewModel":
+                    return (T)(object)new Telegram.ViewModels.Create.NewBotViewModel(
+                        _clientService,
+                        _settingsService,
+                        _eventAggregator);
                 case "Telegram.ViewModels.InstantViewModel":
                     return (T)(object)new Telegram.ViewModels.InstantViewModel(
                         _clientService,
@@ -920,6 +925,8 @@ namespace Telegram.Services
                     return (T)(_textRecognitionService ??= new Telegram.Services.TextRecognitionService(
                         _clientService,
                         _eventAggregator));
+                case "Telegram.Services.ISession":
+                    return (T)(object)this;
                 default:
                     return default;
 

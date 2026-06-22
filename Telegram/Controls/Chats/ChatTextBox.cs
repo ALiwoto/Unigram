@@ -468,9 +468,10 @@ namespace Telegram.Controls.Chats
                         return true;
                     }
 
-                    var members = chat.Type is ChatTypePrivate or ChatTypeSecret or ChatTypeBasicGroup or ChatTypeSupergroup { IsChannel: false };
+                    var guestBots = chat.Type is not ChatTypeSecret;
+                    var members = chat.Type is /*ChatTypePrivate or ChatTypeSecret or*/ ChatTypeBasicGroup or ChatTypeSupergroup { IsChannel: false };
 
-                    autocomplete = new UsernameCollection(ViewModel.ClientService, ViewModel.Chat.Id, ViewModel.TopicId, result, index == 0, members, false);
+                    autocomplete = new UsernameCollection(ViewModel.ClientService, ViewModel.Chat.Id, ViewModel.TopicId, result, index == 0, guestBots, members, false);
                     recycle = prev is UsernameCollection;
 
                     return true;
@@ -687,12 +688,13 @@ namespace Telegram.Controls.Chats
             private readonly string _query;
 
             private readonly bool _bots;
+            private readonly bool _guestBots;
             private readonly bool _members;
             private readonly bool _self;
 
             private bool _hasMore = true;
 
-            public UsernameCollection(IClientService clientService, long chatId, MessageTopic topicId, string query, bool bots, bool members, bool self)
+            public UsernameCollection(IClientService clientService, long chatId, MessageTopic topicId, string query, bool bots, bool guestBots, bool members, bool self)
             {
                 _clientService = clientService;
                 _chatId = chatId;
@@ -700,6 +702,7 @@ namespace Telegram.Controls.Chats
                 _query = query;
 
                 _bots = bots;
+                _guestBots = guestBots;
                 _members = members;
                 _self = self;
             }
@@ -728,9 +731,26 @@ namespace Telegram.Controls.Chats
                         }
                     }
 
+                    if (_guestBots)
+                    {
+                        var response = await _clientService.SendAsync(new GetTopChats(new TopChatCategoryGuestBots(), 10));
+                        if (response is Telegram.Td.Api.Chats chats)
+                        {
+                            foreach (var id in chats.ChatIds)
+                            {
+                                var user = _clientService.GetUser(_clientService.GetChat(id));
+                                if (user != null && (user.HasActiveUsername(_query, out _) || ClientEx.SearchByPrefix(user.FullName(), _query)))
+                                {
+                                    Add(user);
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+
                     if (_members)
                     {
-                        if (_self && _clientService.TryGetUser(_clientService.Options.MyId, out Td.Api.User self))
+                        if (_self && string.IsNullOrEmpty(_query) && _clientService.TryGetUser(_clientService.Options.MyId, out Td.Api.User self))
                         {
                             Add(self);
                             count++;
@@ -1244,6 +1264,7 @@ namespace Telegram.Controls.Chats
         {
             _source = collection;
             _incrementalSource = collection as ISupportIncrementalLoading;
+            _initialized = collection is not ISupportIncrementalLoading;
         }
 
         public IAutocompleteCollection Source => _source;
@@ -1292,6 +1313,30 @@ namespace Telegram.Controls.Chats
                     {
                         UpdateImpl(source, true);
                     }
+                }
+            }
+            else
+            {
+                _source = source;
+                _incrementalSource = null;
+
+                if (_initialized)
+                {
+                    _loading = true;
+
+                    var token = Cancel();
+                    var diff = await Task.Run(() => DiffUtil.CalculateDiff(this, source, DefaultDiffHandler, DefaultOptions));
+
+                    if (token.IsCancellationRequested)
+                    {
+                        _loading = false;
+                        return;
+                    }
+
+                    ReplaceDiff(diff);
+                    UpdateEmpty();
+
+                    _loading = false;
                 }
             }
         }

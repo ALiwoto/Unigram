@@ -1049,7 +1049,7 @@ namespace Telegram.Views
                 ViewModel.Aggregator.Publish(update);
             }
 
-            Handle(new UpdateUnconfirmedSession(ViewModel.ClientService.UnconfirmedSession));
+            Handle(new UpdateUnconfirmedSession(ViewModel.ClientService.UnconfirmedSession, 1));
             Handle(new UpdateActiveCall());
             Handle(ViewModel.ClientService.FreezeState);
             UpdateChatFolders();
@@ -1204,9 +1204,9 @@ namespace Telegram.Views
                     //    : GCLatencyMode.Interactive;
 
                     //NativeUtils.Collect = true;
-                    //GC.Collect();
-                    //GC.WaitForPendingFinalizers();
-                    //GC.Collect();
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                    GC.Collect();
                     //NativeUtils.Collect = false;
 
                     GarbageCollectionMonitor.DisconnectUnusedReferenceSources();

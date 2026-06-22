@@ -1977,6 +1977,15 @@
                                                               ToolTipService.ToolTip="{CustomResource AccDescrAttachButton}" />
                             </Border>
 
+                            <controls:GlyphButton x:Name="ButtonEditor"
+                                                  Click="ButtonEditor_Click"
+                                                  Glyph="&#xEB02;"
+                                                  VerticalAlignment="Top"
+                                                  Height="48"
+                                                  Visibility="Collapsed"
+                                                  Grid.Column="1"
+                                                  Grid.Row="1" />
+
                             <Grid x:Name="ButtonsRoot"
                                   Grid.Column="3"
                                   Grid.Row="1">
@@ -2096,9 +2105,10 @@
                                                             AllowFocusOnInteraction="False"
                                                             Glyph="&#xE9E4;"
                                                             CheckedGlyph="&#xE9E0;"
-                                                            ManipulationMode="TranslateX,TranslateY">
+                                                            ManipulationMode="TranslateX,TranslateY"
+                                                            Foreground="#FFFFFF">
                                         <controls:AnimatedIconToggleButton.Source>
-                                            <icons:VoiceVideo />
+                                            <icons:VoiceVideo2 />
                                         </controls:AnimatedIconToggleButton.Source>
                                     </chats:ChatRecordButton>
                                 </Grid>
@@ -2187,9 +2197,9 @@
                                                        Height="28" />
                                 </Grid>
 
-                                <controls:GlyphButton x:Name="ButtonEditor"
-                                                      Click="ButtonEditor_Click"
-                                                      Glyph="&#xEB02;"
+                                <controls:GlyphButton x:Name="ButtonMaximize"
+                                                      Click="ButtonMaximize_Click"
+                                                      Glyph="&#xEA95;"
                                                       VerticalAlignment="Top"
                                                       Height="48"
                                                       Visibility="Collapsed"

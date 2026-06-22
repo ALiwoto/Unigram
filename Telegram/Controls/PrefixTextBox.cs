@@ -7,6 +7,7 @@
 
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Media;
 
 namespace Telegram.Controls
 {
@@ -103,6 +104,66 @@ namespace Telegram.Controls
             _value = Prefix + (newValue ?? string.Empty);
             Text = _value;
         }
+
+        #endregion
+    }
+
+    public partial class PrefixTextBox2 : TextBox
+    {
+        public PrefixTextBox2()
+        {
+            DefaultStyleKey = typeof(PrefixTextBox2);
+        }
+
+        #region Prefix
+
+        public string Prefix
+        {
+            get { return (string)GetValue(PrefixProperty); }
+            set { SetValue(PrefixProperty, value); }
+        }
+
+        public static readonly DependencyProperty PrefixProperty =
+            DependencyProperty.Register(nameof(Prefix), typeof(string), typeof(PrefixTextBox2), new PropertyMetadata(string.Empty));
+
+        #endregion
+
+        #region PrefixForeground
+
+        public Brush PrefixForeground
+        {
+            get { return (Brush)GetValue(PrefixForegroundProperty); }
+            set { SetValue(PrefixForegroundProperty, value); }
+        }
+
+        public static readonly DependencyProperty PrefixForegroundProperty =
+            DependencyProperty.Register(nameof(PrefixForeground), typeof(Brush), typeof(PrefixTextBox2), new PropertyMetadata(null));
+
+        #endregion
+
+        #region Suffix
+
+        public string Suffix
+        {
+            get { return (string)GetValue(SuffixProperty); }
+            set { SetValue(SuffixProperty, value); }
+        }
+
+        public static readonly DependencyProperty SuffixProperty =
+            DependencyProperty.Register(nameof(Suffix), typeof(string), typeof(PrefixTextBox2), new PropertyMetadata(string.Empty));
+
+        #endregion
+
+        #region SuffixForeground
+
+        public Brush SuffixForeground
+        {
+            get { return (Brush)GetValue(SuffixForegroundProperty); }
+            set { SetValue(SuffixForegroundProperty, value); }
+        }
+
+        public static readonly DependencyProperty SuffixForegroundProperty =
+            DependencyProperty.Register(nameof(SuffixForeground), typeof(Brush), typeof(PrefixTextBox2), new PropertyMetadata(null));
 
         #endregion
     }

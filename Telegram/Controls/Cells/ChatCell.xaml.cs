@@ -759,10 +759,12 @@ namespace Telegram.Controls.Cells
                 UnreadMentionsBadge.Visibility = Visibility.Visible;
                 UnreadMentionsLabel.Text = chat.UnreadMentionCount > 0 ? Icons.MentionFilled : chat.UnreadReactionCount > 0 ? Icons.HeartFilled : Icons.PollFilled;
                 UnreadMentionsBrush.Color = chat.UnreadMentionCount > 0 ? Color.FromArgb(0xFF, 0x00, 0x7a, 0xff) : chat.UnreadReactionCount > 0 ? Color.FromArgb(0xFF, 0xff, 0x2d, 0x55) : Color.FromArgb(0xFF, 0xaf, 0x52, 0xde);
+                PinnedIcon.Opacity = 0;
             }
             else
             {
                 UnreadMentionsBadge.Visibility = Visibility.Collapsed;
+                PinnedIcon.Opacity = 1;
             }
 
             if (updateBotOpen)
@@ -1579,9 +1581,21 @@ namespace Telegram.Controls.Cells
         {
             thumbnail = null;
 
-            if (draft?.InputMessageText is InputMessageText draftText)
+            if (draft?.Content is DraftMessageContentText draftText)
             {
                 return draftText.Text;
+            }
+            else if (draft?.Content is DraftMessageContentRichMessage draftRichMessage)
+            {
+
+            }
+            else if (draft?.Content is DraftMessageContentVoiceNote draftVoiceNote)
+            {
+
+            }
+            else if (draft?.Content is DraftMessageContentVideoNote draftVideoNote)
+            {
+
             }
 
             static FormattedText Text(string text)
@@ -1665,8 +1679,10 @@ namespace Telegram.Controls.Cells
                     return Text1("\U0001F4CB ", invoice.PaidMediaCaption, invoice.ProductInfo.Title);
                 case MessageContact:
                     return Text("\U0001F464 " + Strings.AttachContact);
-                case MessageLocation location:
-                    return Text("\U0001F4CD " + (location.LivePeriod > 0 ? Strings.AttachLiveLocation : Strings.AttachLocation));
+                case MessageLocation:
+                    return Text("\U0001F4CD " + Strings.AttachLocation);
+                case MessageLiveLocation:
+                    return Text("\U0001F4CD " + Strings.AttachLiveLocation);
                 case MessageVenue:
                     return Text("\U0001F4CD " + Strings.AttachLocation);
                 case MessagePhoto photo:
@@ -1752,6 +1768,8 @@ namespace Telegram.Controls.Cells
                     }
                 case MessageText text:
                     return text.Text;
+                case MessageRichMessage richMessage:
+                    return richMessage.Message.ToFormattedText();
                 case MessageDice dice:
                     return dice.Emoji.AsFormattedText();
                 case MessageStakeDice dice:
@@ -1889,7 +1907,8 @@ namespace Telegram.Controls.Cells
             if (chat?.Type is not ChatTypePrivate and not ChatTypeSecret
                 || message.ChatId == clientService.Options.MyId
                 || message.ChatId == clientService.Options.RepliesBotChatId
-                || message.ChatId == clientService.Options.VerificationCodesBotChatId)
+                || message.ChatId == clientService.Options.VerificationCodesBotChatId
+                || message.GuestBotCallerId != null)
             {
                 senderChat = null;
                 return clientService.TryGetUser(message.SenderId, out senderUser)

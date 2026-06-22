@@ -273,14 +273,26 @@ namespace Telegram.Controls.Messages
                     MaxHeight = 360
                 };
 
-                void handler(InteractionsView sender, ItemClickEventArgs e)
+                async void handler(InteractionsView sender, ItemClickEventArgs e)
                 {
                     sender.ItemClick -= handler;
                     flyout.Hide();
 
                     if (e.ClickedItem is AddedReaction addedReaction)
                     {
-                        message.Delegate.NavigationService.NavigateToSender(addedReaction.SenderId, state: new NavigationState { { "report_reactions", new ReportMessageReactions(message.ChatId, message.Id, addedReaction.SenderId) } });
+                        var properties = await message.ClientService.SendAsync(new GetMessageProperties(message.ChatId, message.Id)) as MessageProperties;
+
+                        var state = new NavigationState();
+                        if (properties != null && properties.CanReportReactions)
+                        {
+                            state.Add("report_reactions", new ReportMessageReactions(message.ChatId, message.Id, addedReaction.SenderId));
+                        }
+                        if (properties != null && properties.CanDeleteReactions)
+                        {
+                            state.Add("delete_reactions", new DeleteMessageReactionsFromSender(message.ChatId, message.Id, addedReaction.SenderId));
+                        }
+
+                        message.Delegate.NavigationService.NavigateToSender(addedReaction.SenderId, state: state);
                     }
                     else if (e.ClickedItem is MessageViewer messageViewer)
                     {
@@ -589,6 +601,7 @@ namespace Telegram.Controls.Messages
             };
 
             var root = new Grid();
+            root.Name = "ReactionAnimation";
             root.Width = 32 * 3;
             root.Height = 32 * 3;
             root.Children.Add(aroundView);

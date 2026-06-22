@@ -5,8 +5,6 @@
 // file LICENSE or copy at https://www.gnu.org/licenses/gpl-3.0.txt)
 //
 
-using Telegram.Common;
-using Telegram.Converters;
 using Telegram.Td.Api;
 using Telegram.ViewModels;
 using Windows.UI.Xaml;
@@ -78,48 +76,13 @@ namespace Telegram.Controls.Messages.Content
 
             Texture.Constraint = message;
             Texture.XamlRoot = XamlRoot;
-            Texture.SetSource(message.ClientService, location.Location, 320, 200, message.ChatId);
+            Texture.SetSource(message.ClientService, location, 320, 200, message.ChatId);
 
-            if (location.LivePeriod > 0)
-            {
-                PinPhoto.Source = ProfilePictureSource.MessageSender(message.ClientService, message.SenderId);
+            LivePanel.Visibility = Visibility.Collapsed;
+            LiveRing.Value = null;
 
-                if (location.IsExpired(message.Date))
-                {
-                    LivePanel.Visibility = Visibility.Collapsed;
-                    LiveRing.Value = null;
-
-                    PinDot.Visibility = Visibility.Collapsed;
-                }
-                else
-                {
-                    LivePanel.Visibility = Visibility.Visible;
-                    PinDot.Visibility = Visibility.Collapsed;
-
-                    Title.Text = Strings.AttachLiveLocation;
-                    Subtitle.Text = Locale.FormatLocationUpdateDate(message.EditDate > 0 ? message.EditDate : message.Date);
-
-                    LivePeriod.Text = Locale.FormatLivePeriod(location.LivePeriod, message.Date);
-                    LiveRing.Maximum = location.LivePeriod;
-
-                    if (location.LivePeriod == int.MaxValue)
-                    {
-                        LiveRing.Fill();
-                    }
-                    else
-                    {
-                        LiveRing.Value = Formatter.ToLocalTime(message.Date + location.LivePeriod);
-                    }
-                }
-            }
-            else
-            {
-                LivePanel.Visibility = Visibility.Collapsed;
-                LiveRing.Value = null;
-
-                PinDot.Visibility = Visibility.Visible;
-                PinPhoto.Source = null;
-            }
+            PinDot.Visibility = Visibility.Visible;
+            PinPhoto.Source = null;
         }
 
         public void Recycle()
@@ -132,12 +95,12 @@ namespace Telegram.Controls.Messages.Content
             return content switch
             {
                 MessageLocation => true,
-                MessagePoll poll when poll.Media is MessageLocation && !primary => true,
+                MessagePoll poll when poll.Media is PollMediaLocation && !primary => true,
                 _ => false,
             };
         }
 
-        private MessageLocation GetContent(MessageViewModel message)
+        private Location GetContent(MessageViewModel message)
         {
             if (message?.Delegate == null)
             {
@@ -148,9 +111,9 @@ namespace Telegram.Controls.Messages.Content
             switch (content)
             {
                 case MessageLocation location:
-                    return location;
-                case MessagePoll poll when poll.Media is MessageLocation pollLocation:
-                    return pollLocation;
+                    return location.Location;
+                case MessagePoll poll when poll.Media is PollMediaLocation pollLocation:
+                    return pollLocation.Location;
             }
 
             return null;
@@ -172,11 +135,11 @@ namespace Telegram.Controls.Messages.Content
             {
                 if (_message.ClientService.TryGetUser(_message.SenderId, out User senderUser))
                 {
-                    _message.Delegate.OpenLocation(location.Location, senderUser.FullName());
+                    _message.Delegate.OpenLocation(location, senderUser.FullName());
                 }
                 else if (_message.ClientService.TryGetChat(_message.SenderId, out Chat senderChat))
                 {
-                    _message.Delegate.OpenLocation(location.Location, _message.ClientService.GetTitle(senderChat));
+                    _message.Delegate.OpenLocation(location, _message.ClientService.GetTitle(senderChat));
                 }
             }
         }

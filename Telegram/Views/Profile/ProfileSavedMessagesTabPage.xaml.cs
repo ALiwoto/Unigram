@@ -14,7 +14,7 @@ using Windows.UI.Composition;
 
 namespace Telegram.Views.Profile
 {
-    public sealed partial class ProfileSavedMessagesTabPage : HostedPage, IChatPage
+    public sealed partial class ProfileSavedMessagesTabPage : HostedPage, IProfileChatPage
     {
         public DialogViewModel ViewModel => DataContext as DialogViewModel;
 

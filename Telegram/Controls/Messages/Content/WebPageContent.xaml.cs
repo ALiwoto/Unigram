@@ -322,7 +322,7 @@ namespace Telegram.Controls.Messages.Content
 
             if (small)
             {
-                if (linkPreview.Type is LinkPreviewTypeStickerSet or LinkPreviewTypeGiftCollection)
+                if (linkPreview.Type is LinkPreviewTypeStickerSet or LinkPreviewTypeGiftCollection or LinkPreviewTypeTextCompositionStyle)
                 {
                     Media.Child = new StickerSetContent(message);
                 }
@@ -470,6 +470,7 @@ namespace Telegram.Controls.Messages.Content
 
         public void Recycle()
         {
+            _instantViewToken.Cancel();
             _message = null;
 
             if (_templateApplied && Media.Child is IContent content)
@@ -736,6 +737,10 @@ namespace Telegram.Controls.Messages.Content
             {
                 ShowButton(Strings.ViewAlbum);
             }
+            else if (linkPreview.Type is LinkPreviewTypeTextCompositionStyle)
+            {
+                ShowButton("View Style");
+            }
             else
             {
                 ButtonLine.Visibility = Visibility.Collapsed;
@@ -801,18 +806,18 @@ namespace Telegram.Controls.Messages.Content
         {
             var result = 0;
 
-            foreach (var block in linkPreview.PageBlocks)
+            foreach (var block in linkPreview.Blocks)
             {
                 if (block is PageBlockSlideshow slideshow)
                 {
-                    foreach (var item in slideshow.PageBlocks)
+                    foreach (var item in slideshow.Blocks)
                     {
                         result = CountBlock(linkPreview, item, result);
                     }
                 }
                 else if (block is PageBlockCollage collage)
                 {
-                    foreach (var item in collage.PageBlocks)
+                    foreach (var item in collage.Blocks)
                     {
                         result = CountBlock(linkPreview, item, result);
                     }

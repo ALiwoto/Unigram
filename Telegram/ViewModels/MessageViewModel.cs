@@ -50,7 +50,14 @@ namespace Telegram.ViewModels
 
             if (processText)
             {
-                SetText(message.Content?.GetCaption());
+                if (message.Content is MessageRichMessage richMessage)
+                {
+                    Text = TextStyleRun.GetText(richMessage.Message);
+                }
+                else
+                {
+                    SetText(message.Content?.GetCaption());
+                }
             }
         }
 
@@ -64,7 +71,14 @@ namespace Telegram.ViewModels
 
             if (processText)
             {
-                SetText(message.Content?.GetCaption());
+                if (message.Content is MessageRichMessage richMessage)
+                {
+                    Text = TextStyleRun.GetText(richMessage.Message);
+                }
+                else
+                {
+                    SetText(message.Content?.GetCaption());
+                }
             }
         }
 
@@ -145,7 +159,11 @@ namespace Telegram.ViewModels
             {
                 _generatedContent = value;
 
-                if (value != null)
+                if (value is MessageRichMessage richMessage)
+                {
+                    Text = TextStyleRun.GetText(richMessage.Message);
+                }
+                else if (value != null)
                 {
                     SetText(value.GetCaption());
                 }
@@ -166,6 +184,7 @@ namespace Telegram.ViewModels
             InteractionInfo = message.InteractionInfo;
             AuthorSignature = message.AuthorSignature;
             ViaBotUserId = message.ViaBotUserId;
+            GuestBotCallerId = message.GuestBotCallerId;
             SelfDestructIn = message.SelfDestructIn;
             SelfDestructType = message.SelfDestructType;
             ReplyTo = message.ReplyTo;
@@ -176,6 +195,7 @@ namespace Telegram.ViewModels
             EditDate = message.EditDate;
             Date = message.Date;
             ContainsUnreadMention = message.ContainsUnreadMention;
+            ContainsUnreadPollVotes = message.ContainsUnreadPollVotes;
             IsFromOffline = message.IsFromOffline;
             IsChannelPost = message.IsChannelPost;
             IsPaidStarSuggestedPost = message.IsPaidStarSuggestedPost;
@@ -209,6 +229,7 @@ namespace Telegram.ViewModels
             InteractionInfo = message.InteractionInfo;
             AuthorSignature = message.AuthorSignature;
             ViaBotUserId = message.ViaBotUserId;
+            GuestBotCallerId = message.GuestBotCallerId;
             SelfDestructIn = message.SelfDestructIn;
             SelfDestructType = message.SelfDestructType;
             ReplyTo = message.ReplyTo;
@@ -219,6 +240,7 @@ namespace Telegram.ViewModels
             EditDate = message.EditDate;
             Date = message.Date;
             ContainsUnreadMention = message.ContainsUnreadMention;
+            ContainsUnreadPollVotes = message.ContainsUnreadPollVotes;
             IsFromOffline = message.IsFromOffline;
             IsChannelPost = message.IsChannelPost;
             IsPaidStarSuggestedPost = message.IsPaidStarSuggestedPost;
@@ -338,6 +360,10 @@ namespace Telegram.ViewModels
             {
                 return true;
             }
+            else if (GuestBotCallerId != null)
+            {
+                return true;
+            }
             else if (IsOutgoing)
             {
                 return false;
@@ -358,6 +384,7 @@ namespace Telegram.ViewModels
             CanBeSaved = message.CanBeSaved;
             ChatId = message.ChatId;
             ContainsUnreadMention = message.ContainsUnreadMention;
+            ContainsUnreadPollVotes = message.ContainsUnreadPollVotes;
             //Content = message.Content;
             //Date = message.Date;
             EditDate = message.EditDate;
@@ -380,6 +407,7 @@ namespace Telegram.ViewModels
             SelfDestructIn = message.SelfDestructIn;
             AutoDeleteIn = message.AutoDeleteIn;
             ViaBotUserId = message.ViaBotUserId;
+            GuestBotCallerId = message.GuestBotCallerId;
             InteractionInfo = message.InteractionInfo;
             UnreadReactions = message.UnreadReactions;
             RestrictionInfo = message.RestrictionInfo;
@@ -458,6 +486,7 @@ namespace Telegram.ViewModels
             InteractionInfo = message.InteractionInfo;
             AuthorSignature = message.AuthorSignature;
             ViaBotUserId = message.ViaBotUserId;
+            GuestBotCallerId = message.GuestBotCallerId;
             SelfDestructIn = message.SelfDestructIn;
             SelfDestructType = message.SelfDestructType;
             ReplyTo = message.ReplyTo;
@@ -468,6 +497,7 @@ namespace Telegram.ViewModels
             EditDate = message.EditDate;
             Date = message.Date;
             ContainsUnreadMention = message.ContainsUnreadMention;
+            ContainsUnreadPollVotes = message.ContainsUnreadPollVotes;
             IsFromOffline = message.IsFromOffline;
             IsChannelPost = message.IsChannelPost;
             IsPaidStarSuggestedPost = message.IsPaidStarSuggestedPost;
@@ -538,6 +568,7 @@ namespace Telegram.ViewModels
         public MessageInteractionInfo InteractionInfo { get; set; }
         public string AuthorSignature { get; protected set; }
         public long ViaBotUserId { get; protected set; }
+        public MessageSender? GuestBotCallerId { get; protected set; }
         public double SelfDestructIn { get; set; }
         public MessageSelfDestructType SelfDestructType { get; protected set; }
         public MessageReplyTo ReplyTo { get; set; }
@@ -548,6 +579,7 @@ namespace Telegram.ViewModels
         public int EditDate { get; set; }
         public int Date { get; protected set; }
         public bool ContainsUnreadMention { get; set; }
+        public bool ContainsUnreadPollVotes { get; set; }
         public bool IsFromOffline { get; protected set; }
         public bool IsChannelPost { get; protected set; }
         public bool IsPaidStarSuggestedPost { get; protected set; }
@@ -577,7 +609,14 @@ namespace Telegram.ViewModels
         private void SetContent(MessageContent content)
         {
             _content = content;
-            SetText(content?.GetCaption());
+            if (content is MessageRichMessage richMessage)
+            {
+                Text = TextStyleRun.GetText(richMessage.Message);
+            }
+            else
+            {
+                SetText(content?.GetCaption());
+            }
         }
 
         protected void SetText(FormattedText caption)
@@ -627,7 +666,7 @@ namespace Telegram.ViewModels
         // TODO: Get rid of this
         public Message Get()
         {
-            return new Message(Id, SenderId, ChatId, SendingState, SchedulingState, IsOutgoing, IsPinned, IsFromOffline, CanBeSaved, HasTimestampedMedia, IsChannelPost, IsPaidStarSuggestedPost, IsPaidTonSuggestedPost, ContainsUnreadMention, Date, EditDate, ForwardInfo, ImportInfo, InteractionInfo, UnreadReactions, FactCheck, SuggestedPostInfo, ReplyTo, TopicId, SelfDestructType, SelfDestructIn, AutoDeleteIn, ViaBotUserId, SenderBusinessBotUserId, SenderBoostCount, SenderTag, PaidMessageStarCount, AuthorSignature, MediaAlbumId, EffectId, RestrictionInfo, SummaryLanguageCode, Content, ReplyMarkup);
+            return new Message(Id, SenderId, ChatId, SendingState, SchedulingState, IsOutgoing, IsPinned, IsFromOffline, CanBeSaved, HasTimestampedMedia, IsChannelPost, IsPaidStarSuggestedPost, IsPaidTonSuggestedPost, ContainsUnreadMention, ContainsUnreadPollVotes, Date, EditDate, ForwardInfo, ImportInfo, InteractionInfo, UnreadReactions, FactCheck, SuggestedPostInfo, ReplyTo, TopicId, SelfDestructType, SelfDestructIn, AutoDeleteIn, ViaBotUserId, GuestBotCallerId, SenderBusinessBotUserId, SenderBoostCount, SenderTag, PaidMessageStarCount, AuthorSignature, MediaAlbumId, EffectId, RestrictionInfo, SummaryLanguageCode, Content, ReplyMarkup);
         }
 
         public virtual bool CanBeAddedToDownloads
